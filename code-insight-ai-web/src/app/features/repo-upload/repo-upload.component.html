@@ -1,0 +1,36 @@
+<section class="repo-upload">
+  <h1>CodeInsightAI</h1>
+  <p class="subtitle">
+    Analiza automáticamente un repositorio de código fuente: arquitectura,
+    componentes clave y descripción funcional.
+  </p>
+
+  <form (ngSubmit)="onSubmit()" class="upload-form">
+    <label for="gitUrl">URL de repositorio Git público</label>
+    <input
+      id="gitUrl"
+      name="gitUrl"
+      type="url"
+      placeholder="https://github.com/usuario/proyecto-demo"
+      [(ngModel)]="gitUrl"
+      [disabled]="isLoading()"
+      required
+    />
+
+    <button type="submit" [disabled]="isLoading()">
+      @if (isLoading()) {
+        Analizando...
+      } @else {
+        Analizar repositorio
+      }
+    </button>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+  </form>
+
+  <p class="hint">
+    Próximamente: carga de archivo ZIP como alternativa a la URL git.
+  </p>
+</section>
