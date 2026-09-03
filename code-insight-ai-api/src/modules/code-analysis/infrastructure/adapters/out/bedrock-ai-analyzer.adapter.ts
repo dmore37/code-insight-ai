@@ -22,9 +22,20 @@ const VALID_PATTERNS: ArchitecturePattern[] = [
 ];
 
 /**
- * Adaptador de salida: usa Amazon Bedrock (modelo Claude de Anthropic)
- * para generar el análisis funcional, la inferencia de arquitectura y
- * las recomendaciones/riesgos, a partir del resultado del análisis estático.
+ * Adaptador de salida: usa Amazon Bedrock para generar el análisis funcional,
+ * la inferencia de arquitectura y las recomendaciones/riesgos, a partir del
+ * resultado del análisis estático.
+ *
+ * Soporta dos familias de modelos con formatos de request/response distintos:
+ * - Amazon Nova (amazon.nova-*): formato "messages" con content:[{text}] e
+ *   inferenceConfig.maxTokens. Respuesta en output.message.content[0].text.
+ * - Anthropic Claude (anthropic.*): formato anthropic_version + max_tokens.
+ *   Respuesta en content[0].text.
+ *
+ * El modelo por defecto es Amazon Nova Lite porque, en cuentas AWS con
+ * restricciones organizacionales (SCP) sobre AWS Marketplace, los modelos de
+ * terceros como Claude pueden quedar bloqueados (AccessDeniedException),
+ * mientras que los modelos nativos de Amazon no requieren esa suscripción.
  */
 @Injectable()
 export class BedrockAiAnalyzerAdapter implements AiAnalyzerPort {
@@ -38,8 +49,33 @@ export class BedrockAiAnalyzerAdapter implements AiAnalyzerPort {
     });
     this.modelId = this.config.get<string>(
       'BEDROCK_MODEL_ID',
-      'anthropic.claude-3-haiku-20240307-v1:0',
+      'amazon.nova-lite-v1:0',
     );
+  }
+
+  private isNovaModel(): boolean {
+    return this.modelId.startsWith('amazon.nova');
+  }
+
+  private buildRequestBody(prompt: string): string {
+    if (this.isNovaModel()) {
+      return JSON.stringify({
+        messages: [{ role: 'user', content: [{ text: prompt }] }],
+        inferenceConfig: { maxTokens: 1500 },
+      });
+    }
+    return JSON.stringify({
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }],
+    });
+  }
+
+  private extractText(parsed: any): string {
+    if (this.isNovaModel()) {
+      return parsed.output?.message?.content?.[0]?.text ?? '{}';
+    }
+    return parsed.content?.[0]?.text ?? '{}';
   }
 
   async analyze(staticResult: StaticAnalysisResult): Promise<AiAnalysisResult> {
@@ -50,17 +86,13 @@ export class BedrockAiAnalyzerAdapter implements AiAnalyzerPort {
         modelId: this.modelId,
         contentType: 'application/json',
         accept: 'application/json',
-        body: JSON.stringify({
-          anthropic_version: 'bedrock-2023-05-31',
-          max_tokens: 1500,
-          messages: [{ role: 'user', content: prompt }],
-        }),
+        body: this.buildRequestBody(prompt),
       });
 
       const response = await this.client.send(command);
       const raw = new TextDecoder().decode(response.body);
       const parsed = JSON.parse(raw);
-      const text: string = parsed.content?.[0]?.text ?? '{}';
+      const text: string = this.extractText(parsed);
 
       return this.parseAiResponse(text);
     } catch (error) {
