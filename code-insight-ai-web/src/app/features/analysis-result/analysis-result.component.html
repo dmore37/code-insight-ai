@@ -1,0 +1,95 @@
+@if (result(); as r) {
+  <section class="analysis-result">
+    <header class="result-header">
+      <h1>{{ r.general.projectName }}</h1>
+      <button class="back-btn" (click)="goBack()">← Analizar otro repositorio</button>
+    </header>
+
+    <!-- Sección 2: Resultado de análisis -->
+    <div class="section" id="seccion-2">
+      <h2>Resumen funcional</h2>
+      <p class="summary">{{ r.functional.summary }}</p>
+
+      <h3>Tecnologías detectadas</h3>
+      <div class="tags">
+        @for (tech of r.functional.technologiesDetected; track tech) {
+          <span class="tag">{{ tech }}</span>
+        }
+      </div>
+
+      <h3>Información general</h3>
+      <ul class="info-list">
+        <li><strong>Lenguaje principal:</strong> {{ r.general.mainLanguage }}</li>
+        <li><strong>Framework principal:</strong> {{ r.general.mainFramework }}</li>
+        <li><strong>Cantidad aproximada de archivos:</strong> {{ r.general.approxFileCount }}</li>
+      </ul>
+
+      <h3>Arquitectura inferida</h3>
+      <div class="architecture-badge">
+        <span class="pattern">{{ r.architecture.pattern }}</span>
+        <span class="confidence">Confianza: {{ confidencePercent() }}%</span>
+      </div>
+
+      @if (r.architecture.evidences.length > 0) {
+        <h4>Evidencias encontradas</h4>
+        <ul class="evidence-list">
+          @for (evidence of r.architecture.evidences; track evidence) {
+            <li>{{ evidence }}</li>
+          }
+        </ul>
+      }
+    </div>
+
+    <!-- Sección 3: Hallazgos -->
+    <div class="section" id="seccion-3">
+      <h2>Hallazgos</h2>
+
+      <h3>Componentes identificados</h3>
+      @if (componentsByType().length > 0) {
+        <div class="components-grid">
+          @for (group of componentsByType(); track group.type) {
+            <div class="component-card">
+              <span class="count">{{ group.count }}</span>
+              <span class="type">{{ group.type }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty">No se identificaron componentes por convención de nombres.</p>
+      }
+
+      <div class="findings-columns">
+        <div class="findings-col">
+          <h3>Recomendaciones</h3>
+          @if (r.findings.recommendations.length > 0) {
+            <ul class="recommendations">
+              @for (rec of r.findings.recommendations; track rec) {
+                <li>{{ rec }}</li>
+              }
+            </ul>
+          } @else {
+            <p class="empty">Sin recomendaciones.</p>
+          }
+        </div>
+
+        <div class="findings-col">
+          <h3>Riesgos detectados</h3>
+          @if (r.findings.risks.length > 0) {
+            <ul class="risks">
+              @for (risk of r.findings.risks; track risk) {
+                <li>{{ risk }}</li>
+              }
+            </ul>
+          } @else {
+            <p class="empty">Sin riesgos detectados.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+} @else {
+  <section class="no-result">
+    <p>No hay ningún análisis cargado todavía.</p>
+    <button (click)="goBack()">Ir a la pantalla de carga</button>
+  </section>
+}
