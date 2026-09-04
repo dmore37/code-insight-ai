@@ -24,6 +24,12 @@ const CACHE_TTL_MS = 60 * 60 * 1000;
  * de 1 hora) para la misma URL, se reutiliza tal cual (mismo registro,
  * sin crear uno nuevo ni volver a llamar a Bedrock/SQS). Esto evita
  * repetir análisis costosos para URLs consultadas varias veces seguidas.
+ *
+ * Caché por zipHash: mismo mecanismo, pero para ZIPs subidos, usando el
+ * hash SHA-256 del contenido (calculado en el cliente) como clave, ya
+ * que dos subidas del mismo archivo generan keys de S3 distintas
+ * (incluyen un UUID), pero el contenido —y por lo tanto el hash— es
+ * idéntico.
  */
 @Injectable()
 export class SubmitAnalysisService implements SubmitAnalysisUseCase {
@@ -35,17 +41,30 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
   ) {}
 
   async execute(command: AnalyzeRepositoryCommand): Promise<AnalysisRecord> {
-    if (!command.gitUrl && !command.zipFilePath) {
+    if (!command.gitUrl && !command.zipFilePath && !command.zipS3Key) {
       throw new MissingRepositorySourceError();
     }
 
     if (command.gitUrl) {
-      const cached = await this.findFreshCached(command.gitUrl);
+      const cached = await this.findFreshCached(() =>
+        this.analysisRepository.findLatestCompletedByGitUrl(command.gitUrl!),
+      );
+      if (cached) return cached;
+    } else if (command.zipHash) {
+      const cached = await this.findFreshCached(() =>
+        this.analysisRepository.findLatestCompletedByZipHash(
+          command.zipHash!,
+        ),
+      );
       if (cached) return cached;
     }
 
     const id = randomUUID();
-    const record = AnalysisRecord.createProcessing(id, command);
+    const record = AnalysisRecord.createProcessing(
+      id,
+      command,
+      command.ownerId,
+    );
 
     await this.analysisRepository.save(record);
 
@@ -54,6 +73,7 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
         id,
         gitUrl: command.gitUrl,
         zipFilePath: command.zipFilePath,
+        zipS3Key: command.zipS3Key,
       });
     } catch (cause) {
       const failedRecord = record.withFailed(
@@ -68,12 +88,14 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
 
   /**
    * Solo cuenta como "caché válido" si el análisis "completed" más
-   * reciente para esa URL tiene menos de `CACHE_TTL_MS`; caso contrario
-   * (o si no existe ninguno), devuelve null y se ejecuta el flujo normal.
+   * reciente encontrado por `finder` tiene menos de `CACHE_TTL_MS`; caso
+   * contrario (o si no existe ninguno), devuelve null y se ejecuta el
+   * flujo normal.
    */
-  private async findFreshCached(gitUrl: string): Promise<AnalysisRecord | null> {
-    const cached =
-      await this.analysisRepository.findLatestCompletedByGitUrl(gitUrl);
+  private async findFreshCached(
+    finder: () => Promise<AnalysisRecord | null>,
+  ): Promise<AnalysisRecord | null> {
+    const cached = await finder();
     if (!cached) return null;
 
     const ageMs = Date.now() - new Date(cached.createdAt).getTime();

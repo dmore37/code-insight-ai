@@ -32,3 +32,13 @@ output "sqs_queue_url" {
   description = "URL de la cola SQS de trabajos de análisis asíncronos."
   value       = aws_sqs_queue.analysis_jobs.url
 }
+
+output "cognito_user_pool_id" {
+  description = "ID del User Pool de Cognito (usuarios finales de la app)."
+  value       = aws_cognito_user_pool.users.id
+}
+
+output "cognito_user_pool_client_id" {
+  description = "ID del App Client de Cognito usado por el frontend Angular."
+  value       = aws_cognito_user_pool_client.web.id
+}

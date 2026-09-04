@@ -32,6 +32,7 @@ export class ProcessAnalysisJobService implements ProcessAnalysisJobUseCase {
       const result = await this.analyzeRepository.execute({
         gitUrl: job.gitUrl,
         zipFilePath: job.zipFilePath,
+        zipS3Key: job.zipS3Key,
       });
 
       const idResult = { ...result, id: job.id } as typeof result;

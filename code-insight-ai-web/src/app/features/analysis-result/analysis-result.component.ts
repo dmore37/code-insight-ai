@@ -36,4 +36,15 @@ export class AnalysisResultComponent {
     this.analysisState.clear();
     this.router.navigateByUrl('/');
   }
+
+  /**
+   * Exporta el resultado a PDF usando el diálogo nativo de impresión del
+   * navegador ("Guardar como PDF"), en vez de agregar una librería extra
+   * (jsPDF, html2canvas, etc.). El CSS `@media print` del componente
+   * oculta los botones y ajusta el layout para que se vea como un
+   * documento, no como una página web.
+   */
+  exportToPdf(): void {
+    window.print();
+  }
 }

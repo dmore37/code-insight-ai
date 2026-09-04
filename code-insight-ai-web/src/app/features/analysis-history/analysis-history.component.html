@@ -38,12 +38,30 @@
               </button>
             }
             @if (record.status === 'failed') {
-              <span class="error-message">{{ record.errorMessage }}</span>
+              <span class="error-message">{{ formatErrorMessage(record.errorMessage) }}</span>
+              @if (canRetry(record)) {
+                <button
+                  type="button"
+                  (click)="retry(record)"
+                  [disabled]="isRetrying(record)"
+                >
+                  @if (isRetrying(record)) {
+                    Reintentando…
+                  } @else {
+                    ↻ Reintentar
+                  }
+                </button>
+              }
             }
           </div>
         </li>
       }
     </ul>
+    <div class="load-more">
+      <button type="button" (click)="loadMore()" [disabled]="isLoading()">
+        Cargar más
+      </button>
+    </div>
   }
 
 </section>

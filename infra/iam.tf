@@ -77,3 +77,19 @@ resource "aws_iam_role_policy" "sqs_analysis_jobs" {
   role   = aws_iam_role.lambda_role.id
   policy = data.aws_iam_policy_document.sqs_analysis_jobs.json
 }
+
+# Permite generar URLs prefirmadas de subida (PutObject) y leer el ZIP
+# subido para procesarlo (GetObject) en el worker asíncrono.
+data "aws_iam_policy_document" "s3_zip_uploads" {
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
+    resources = ["${aws_s3_bucket.zip_uploads.arn}/*"]
+  }
+}
+
+resource "aws_iam_role_policy" "s3_zip_uploads" {
+  name   = "S3ZipUploads"
+  role   = aws_iam_role.lambda_role.id
+  policy = data.aws_iam_policy_document.s3_zip_uploads.json
+}

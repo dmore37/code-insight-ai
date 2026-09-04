@@ -32,6 +32,8 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
   private readonly tableName: string;
   private readonly gsiName: string;
   private readonly gitUrlGsiName: string;
+  private readonly ownerGsiName: string;
+  private readonly zipHashGsiName: string;
   private static readonly GSI_PK_VALUE = 'ALL';
   private static readonly RETENTION_DAYS = 90;
 
@@ -54,6 +56,14 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
       'DYNAMODB_GITURL_GSI_NAME',
       'byGitUrl',
     );
+    this.ownerGsiName = this.config.get<string>(
+      'DYNAMODB_OWNER_GSI_NAME',
+      'byOwner',
+    );
+    this.zipHashGsiName = this.config.get<string>(
+      'DYNAMODB_ZIPHASH_GSI_NAME',
+      'byZipHash',
+    );
   }
 
   async save(record: AnalysisRecord): Promise<void> {
@@ -62,10 +72,20 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
         TableName: this.tableName,
         Item: {
           id: record.id,
-          gsiPk: DynamoDbAnalysisRepositoryAdapter.GSI_PK_VALUE,
+          // Índice disperso: solo los registros públicos reciben gsiPk,
+          // de modo que el feed general (GSI "byCreatedAt") no incluya
+          // análisis privados (ZIP) de otros usuarios.
+          gsiPk:
+            record.visibility === 'public'
+              ? DynamoDbAnalysisRepositoryAdapter.GSI_PK_VALUE
+              : undefined,
           status: record.status,
           gitUrl: record.gitUrl,
           zipFilePath: record.zipFilePath,
+          zipS3Key: record.zipS3Key,
+          zipHash: record.zipHash,
+          ownerId: record.ownerId,
+          visibility: record.visibility,
           result: this.toPlainResult(record.result),
           errorMessage: record.errorMessage,
           createdAt: record.createdAt,
@@ -165,6 +185,71 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
       item.zipFilePath,
       item.result,
       item.errorMessage,
+      item.ownerId,
+      item.visibility ?? 'public',
+      item.zipS3Key,
+      item.zipHash,
     );
+  }
+
+  /**
+   * Igual que `findLatestCompletedByGitUrl` pero indexado por el hash
+   * SHA-256 del ZIP (GSI "byZipHash", disperso: solo los registros con
+   * `zipHash` presente aparecen en él).
+   */
+  async findLatestCompletedByZipHash(
+    zipHash: string,
+  ): Promise<AnalysisRecord | null> {
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: this.zipHashGsiName,
+        KeyConditionExpression: 'zipHash = :h',
+        ExpressionAttributeValues: { ':h': zipHash },
+        ScanIndexForward: false,
+        Limit: 10,
+      }),
+    );
+    const completedItem = (response.Items ?? []).find(
+      (item) => item.status === 'completed',
+    );
+    return completedItem ? this.toEntity(completedItem) : null;
+  }
+
+  /**
+   * Historial combinado: consulta el feed público (GSI "byCreatedAt") y,
+   * si hay `ownerId`, también su historial privado (GSI "byOwner"),
+   * fusiona ambas listas (dedupe por id) y ordena por `createdAt` desc.
+   */
+  async findRecentPublicAndByOwner(
+    ownerId: string | undefined,
+    limit: number,
+  ): Promise<AnalysisRecord[]> {
+    const publicItems = await this.findRecent(limit);
+
+    if (!ownerId) return publicItems;
+
+    const ownerResponse = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: this.ownerGsiName,
+        KeyConditionExpression: 'ownerId = :o',
+        ExpressionAttributeValues: { ':o': ownerId },
+        ScanIndexForward: false,
+        Limit: limit,
+      }),
+    );
+    const ownerItems = (ownerResponse.Items ?? []).map((item) =>
+      this.toEntity(item),
+    );
+
+    const merged = new Map<string, AnalysisRecord>();
+    for (const item of [...publicItems, ...ownerItems]) {
+      merged.set(item.id, item);
+    }
+
+    return [...merged.values()]
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .slice(0, limit);
   }
 }

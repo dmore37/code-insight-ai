@@ -5,6 +5,7 @@ export interface AnalysisJobMessage {
   id: string;
   gitUrl?: string;
   zipFilePath?: string;
+  zipS3Key?: string;
 }
 
 /**

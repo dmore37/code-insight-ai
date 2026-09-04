@@ -77,6 +77,11 @@ resource "null_resource" "frontend_build_deploy" {
 export const environment = {
   production: true,
   apiBaseUrl: '${local.api_invoke_url}',
+  cognito: {
+    region: '${var.aws_region}',
+    userPoolId: '${aws_cognito_user_pool.users.id}',
+    clientId: '${aws_cognito_user_pool_client.web.id}',
+  },
 };
 EOF
       npm run build -- --configuration production
@@ -88,5 +93,7 @@ EOF
     aws_s3_bucket_policy.web_public_read,
     aws_s3_bucket_website_configuration.web,
     aws_apigatewayv2_stage.default,
+    aws_cognito_user_pool.users,
+    aws_cognito_user_pool_client.web,
   ]
 }

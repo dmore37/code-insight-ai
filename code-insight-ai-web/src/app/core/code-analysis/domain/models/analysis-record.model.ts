@@ -17,6 +17,10 @@ export interface AnalysisRecord {
   updatedAt: string;
   gitUrl?: string;
   zipFilePath?: string;
+  zipS3Key?: string;
+  zipHash?: string;
   result?: AnalysisResult;
   errorMessage?: string;
+  ownerId?: string;
+  visibility?: 'public' | 'private';
 }

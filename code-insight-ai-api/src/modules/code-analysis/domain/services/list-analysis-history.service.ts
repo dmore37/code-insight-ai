@@ -13,7 +13,10 @@ export class ListAnalysisHistoryService implements ListAnalysisHistoryUseCase {
     private readonly analysisRepository: AnalysisRepositoryPort,
   ) {}
 
-  async execute(limit: number = DEFAULT_LIMIT): Promise<AnalysisRecord[]> {
-    return this.analysisRepository.findRecent(limit);
+  async execute(
+    limit: number = DEFAULT_LIMIT,
+    ownerId?: string,
+  ): Promise<AnalysisRecord[]> {
+    return this.analysisRepository.findRecentPublicAndByOwner(ownerId, limit);
   }
 }

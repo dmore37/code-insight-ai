@@ -16,7 +16,12 @@ resource "aws_lambda_function" "api" {
       DYNAMODB_TABLE_NAME      = aws_dynamodb_table.analysis_history.name
       DYNAMODB_GSI_NAME        = "byCreatedAt"
       DYNAMODB_GITURL_GSI_NAME = "byGitUrl"
+      DYNAMODB_OWNER_GSI_NAME  = "byOwner"
+      DYNAMODB_ZIPHASH_GSI_NAME = "byZipHash"
       SQS_QUEUE_URL            = aws_sqs_queue.analysis_jobs.url
+      ZIP_UPLOADS_BUCKET       = aws_s3_bucket.zip_uploads.bucket
+      COGNITO_USER_POOL_ID     = aws_cognito_user_pool.users.id
+      COGNITO_CLIENT_ID        = aws_cognito_user_pool_client.web.id
     }
   }
 

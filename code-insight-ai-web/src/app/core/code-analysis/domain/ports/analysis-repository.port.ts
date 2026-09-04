@@ -5,6 +5,10 @@ import { AnalysisResult } from '../models/analysis-result.model';
 export interface AnalyzeRepositoryCommand {
   gitUrl?: string;
   zipFile?: File;
+  /** Key en S3 del ZIP ya subido mediante URL prefirmada. */
+  zipS3Key?: string;
+  /** Hash SHA-256 del contenido del ZIP (para cache de resultados). */
+  zipHash?: string;
 }
 
 /**

@@ -2,7 +2,12 @@
   <section class="analysis-result">
     <header class="result-header">
       <h1>{{ r.general.projectName }}</h1>
-      <button class="back-btn" (click)="goBack()">← Analizar otro repositorio</button>
+      <div class="header-actions">
+        <button class="export-btn" (click)="exportToPdf()">
+          🖨️ Exportar a PDF
+        </button>
+        <button class="back-btn" (click)="goBack()">← Analizar otro repositorio</button>
+      </div>
     </header>
 
     <!-- Sección 2: Resultado de análisis -->

@@ -1,12 +1,20 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { RouterOutlet, RouterLink } from '@angular/router';
+import { AuthPort } from './core/auth/domain/ports/auth.port';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, RouterLink],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
   title = 'code-insight-ai-web';
+
+  private readonly auth = inject(AuthPort);
+  readonly currentUser = this.auth.currentUser;
+
+  logout(): void {
+    this.auth.logout();
+  }
 }

@@ -16,4 +16,23 @@ export abstract class AnalysisRepositoryPort {
   abstract findLatestCompletedByGitUrl(
     gitUrl: string,
   ): Promise<AnalysisRecord | null>;
+  /**
+   * Igual que `findLatestCompletedByGitUrl` pero para análisis por ZIP,
+   * usando el hash SHA-256 del contenido (calculado en el cliente) como
+   * clave de caché, ya que dos ZIPs distintos (nombres/keys de S3
+   * distintos) pueden tener exactamente el mismo contenido.
+   */
+  abstract findLatestCompletedByZipHash(
+    zipHash: string,
+  ): Promise<AnalysisRecord | null>;
+  /**
+   * Historial combinado: análisis públicos (feed general, GSI
+   * "byCreatedAt") + análisis privados del dueño indicado (GSI "byOwner").
+   * Si `ownerId` es undefined, solo devuelve el feed público.
+   */
+  abstract findRecentPublicAndByOwner(
+    ownerId: string | undefined,
+    limit: number,
+  ): Promise<AnalysisRecord[]>;
 }
+

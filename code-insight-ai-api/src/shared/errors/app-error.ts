@@ -26,11 +26,31 @@ export class ValidationAppError extends AppError {
   }
 }
 
+/** Error por falta de autenticación (equivalente conceptual a un 401) */
+export class UnauthorizedAppError extends AppError {
+  readonly code = 'UNAUTHORIZED';
+
+  constructor(message = 'Debes iniciar sesión para realizar esta acción.') {
+    super(message);
+  }
+}
+
 /** Error inesperado no controlado explícitamente (equivalente conceptual a un 500) */
 export class UnexpectedAppError extends AppError {
   readonly code = 'UNEXPECTED_ERROR';
 
   constructor(message = 'Ocurrió un error inesperado.', details?: unknown) {
     super(message, details);
+  }
+}
+
+/** Se superó la cuota diaria de análisis permitida (equivalente conceptual a un 429) */
+export class RateLimitExceededError extends AppError {
+  readonly code = 'RATE_LIMIT_EXCEEDED';
+
+  constructor(
+    message = 'Alcanzaste el límite diario de análisis. Intenta nuevamente mañana.',
+  ) {
+    super(message);
   }
 }
