@@ -10,16 +10,9 @@ import {
 } from '../../../domain/ports/out/ai-analyzer.port';
 import { StaticAnalysisResult } from '../../../domain/ports/out/static-analyzer.port';
 import { ArchitecturePattern } from '../../../domain/entities/analysis-result.entity';
+import { DEFAULT_AWS_REGION } from '../../config/defaults';
 
-const VALID_PATTERNS: ArchitecturePattern[] = [
-  'Monolito',
-  'MVC',
-  'Clean Architecture',
-  'Hexagonal',
-  'Microservicios',
-  'N-Capas',
-  'Indeterminado',
-];
+const VALID_PATTERNS: ArchitecturePattern[] = Object.values(ArchitecturePattern);
 
 /**
  * Adaptador de salida: usa Amazon Bedrock para generar el análisis funcional,
@@ -45,7 +38,7 @@ export class BedrockAiAnalyzerAdapter implements AiAnalyzerPort {
 
   constructor(private readonly config: ConfigService) {
     this.client = new BedrockRuntimeClient({
-      region: this.config.get<string>('AWS_REGION', 'us-east-1'),
+      region: this.config.get<string>('AWS_REGION', DEFAULT_AWS_REGION),
     });
     this.modelId = this.config.get<string>(
       'BEDROCK_MODEL_ID',
@@ -145,7 +138,7 @@ ${staticResult.keyFileExcerpts.map((f) => `--- ${f.path} ---\n${f.content}`).joi
       json.architecturePattern,
     )
       ? json.architecturePattern
-      : 'Indeterminado';
+      : ArchitecturePattern.Undetermined;
 
     return {
       functional: {
@@ -177,7 +170,7 @@ ${staticResult.keyFileExcerpts.map((f) => `--- ${f.path} ---\n${f.content}`).joi
         ],
       },
       architecture: {
-        pattern: 'Indeterminado',
+        pattern: ArchitecturePattern.Undetermined,
         confidence: 0.3,
         evidences: staticResult.evidences.map((e) => e.description),
       },

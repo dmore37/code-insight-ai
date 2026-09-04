@@ -2,17 +2,20 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AnalysisHistoryPort } from '../../core/code-analysis/domain/ports/analysis-history.port';
-import { AnalysisRecord } from '../../core/code-analysis/domain/models/analysis-record.model';
+import {
+  AnalysisRecord,
+  AnalysisStatus,
+} from '../../core/code-analysis/domain/models/analysis-record.model';
 import {
   extractZipDisplayName,
   sanitizeZipReferences,
 } from '../../core/code-analysis/domain/utils/zip-display-name.util';
 import { AnalysisStateService } from '../analysis-result/analysis-state.service';
 import { AuthPort } from '../../core/auth/domain/ports/auth.port';
-
-const PAGE_SIZE = 20;
-/** Intervalo de polling mientras haya análisis en estado "processing". */
-const POLLING_INTERVAL_MS = 5000;
+import {
+  HISTORY_PAGE_SIZE,
+  HISTORY_POLLING_INTERVAL_MS,
+} from '../../core/code-analysis/config/ui.constants';
 
 /**
  * Historial de análisis (leído desde DynamoDB vía `GET /analysis`).
@@ -45,7 +48,7 @@ export class AnalysisHistoryComponent {
   readonly records = signal<AnalysisRecord[]>([]);
   readonly isLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly pageSize = signal(PAGE_SIZE);
+  readonly pageSize = signal(HISTORY_PAGE_SIZE);
   /** Ids que se están reintentando (para deshabilitar su botón mientras se procesa). */
   readonly retryingIds = signal<Set<string>>(new Set());
 
@@ -86,7 +89,7 @@ export class AnalysisHistoryComponent {
 
   /** Trae más registros del historial (paginación simple aumentando el límite). */
   async loadMore(): Promise<void> {
-    this.pageSize.update((size) => size + PAGE_SIZE);
+    this.pageSize.update((size) => size + HISTORY_PAGE_SIZE);
     await this.load();
   }
 
@@ -152,10 +155,10 @@ export class AnalysisHistoryComponent {
   /** Activa o detiene el polling según si quedan registros "processing". */
   private syncPolling(): void {
     const hasProcessing = this.records().some(
-      (record) => record.status === 'processing',
+      (record) => record.status === AnalysisStatus.Processing,
     );
     if (hasProcessing && !this.pollingHandle) {
-      this.pollingHandle = setInterval(() => this.load(), POLLING_INTERVAL_MS);
+      this.pollingHandle = setInterval(() => this.load(), HISTORY_POLLING_INTERVAL_MS);
     } else if (!hasProcessing && this.pollingHandle) {
       clearInterval(this.pollingHandle);
       this.pollingHandle = null;
@@ -164,11 +167,11 @@ export class AnalysisHistoryComponent {
 
   statusLabel(status: AnalysisRecord['status']): string {
     switch (status) {
-      case 'processing':
+      case AnalysisStatus.Processing:
         return 'Procesando…';
-      case 'completed':
+      case AnalysisStatus.Completed:
         return 'Completado';
-      case 'failed':
+      case AnalysisStatus.Failed:
         return 'Falló';
     }
   }

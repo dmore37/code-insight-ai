@@ -4,8 +4,8 @@ import { randomUUID } from 'node:crypto';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ZipUploadPort, PresignedUpload } from '../../../domain/ports/out/zip-upload.port';
-
-const UPLOAD_URL_TTL_SECONDS = 5 * 60; // 5 minutos
+import { UPLOAD_URL_TTL_SECONDS } from '../../../domain/config/business-rules.constants';
+import { DEFAULT_AWS_REGION } from '../../config/defaults';
 
 /**
  * Adaptador de salida: genera URLs prefirmadas de S3 (PUT) para que el
@@ -22,7 +22,7 @@ export class S3ZipUploadAdapter implements ZipUploadPort {
 
   constructor(private readonly config: ConfigService) {
     this.s3Client = new S3Client({
-      region: this.config.get<string>('AWS_REGION', 'us-east-1'),
+      region: this.config.get<string>('AWS_REGION', DEFAULT_AWS_REGION),
     });
     this.bucket = this.config.get<string>('ZIP_UPLOADS_BUCKET', '');
   }

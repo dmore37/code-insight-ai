@@ -10,9 +10,7 @@ import {
   ANALYSIS_QUEUE_PORT,
 } from '../../infrastructure/config/tokens';
 import { MissingRepositorySourceError, AnalysisQueueError } from '../errors/code-analysis.errors';
-
-/** Ventana de reutilización del caché por gitUrl: 1 hora. */
-const CACHE_TTL_MS = 60 * 60 * 1000;
+import { CACHE_TTL_MS } from '../config/business-rules.constants';
 
 /**
  * Caso de uso: encola una solicitud de análisis para procesamiento

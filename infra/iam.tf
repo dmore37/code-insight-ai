@@ -40,11 +40,18 @@ resource "aws_iam_role_policy" "bedrock_invoke" {
   policy = data.aws_iam_policy_document.bedrock_invoke.json
 }
 
-# Permite leer/escribir el historial de análisis en DynamoDB (tabla + GSI)
+# Permite leer/escribir el historial de análisis en DynamoDB (tabla + GSI).
+# Incluye "UpdateItem" para el contador atómico del rate limiter de Bedrock
+# (ver DynamoDbRateLimiterAdapter), que reutiliza esta misma tabla.
 data "aws_iam_policy_document" "dynamodb_analysis_history" {
   statement {
-    effect  = "Allow"
-    actions = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:Query"]
+    effect = "Allow"
+    actions = [
+      "dynamodb:PutItem",
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:UpdateItem",
+    ]
     resources = [
       aws_dynamodb_table.analysis_history.arn,
       "${aws_dynamodb_table.analysis_history.arn}/index/*",

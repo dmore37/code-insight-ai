@@ -1,4 +1,7 @@
-export type RepositorySourceType = 'git' | 'zip';
+export enum RepositorySourceType {
+  Git = 'git',
+  Zip = 'zip',
+}
 
 /**
  * Entidad que representa el origen del código a analizar,

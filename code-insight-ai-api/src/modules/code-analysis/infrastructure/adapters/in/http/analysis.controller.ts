@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AnalyzeRepositoryUseCase } from '../../../../domain/ports/in/analyze-repository.use-case';
 import { SubmitAnalysisUseCase } from '../../../../domain/ports/in/submit-analysis.use-case';
 import { GetAnalysisStatusUseCase } from '../../../../domain/ports/in/get-analysis-status.use-case';
@@ -17,11 +18,10 @@ import {
   RateLimitExceededError,
 } from '../../../../../../shared/errors/app-error';
 import { getOwnerId } from './extract-owner-id.util';
-
-/** Cuota diaria de análisis por usuario autenticado. */
-const DAILY_LIMIT_PER_USER = 20;
-/** Cuota diaria (más estricta) por IP para solicitudes anónimas (solo URL git pública). */
-const DAILY_LIMIT_PER_ANONYMOUS_IP = 5;
+import {
+  DAILY_LIMIT_PER_USER,
+  DAILY_LIMIT_PER_ANONYMOUS_IP,
+} from '../../../../domain/config/business-rules.constants';
 
 /**
  * Adaptador de entrada HTTP. Nótese que no hay try/catch aquí:
@@ -49,6 +49,7 @@ export class AnalysisController {
     private readonly listAnalysisHistory: ListAnalysisHistoryUseCase,
     private readonly getZipUploadUrl: GetZipUploadUrlUseCase,
     @Inject(RATE_LIMITER_PORT) private readonly rateLimiter: RateLimiterPort,
+    private readonly config: ConfigService,
   ) {}
 
   /** Análisis síncrono: espera el resultado completo antes de responder. */
@@ -100,7 +101,7 @@ export class AnalysisController {
     @Body() body: unknown,
     @Req() req: Request,
   ): Promise<PresignedUpload> {
-    const ownerId = await getOwnerId(req);
+    const ownerId = await getOwnerId(req, this.config);
     if (!ownerId) throw new UnauthorizedAppError();
 
     const fileName =
@@ -126,7 +127,7 @@ export class AnalysisController {
     @Query('limit') limit?: string,
     @Req() req?: Request,
   ): Promise<AnalysisRecord[]> {
-    const ownerId = req ? await getOwnerId(req) : undefined;
+    const ownerId = req ? await getOwnerId(req, this.config) : undefined;
     const parsed = limit ? Number(limit) : undefined;
     return this.listAnalysisHistory.execute(parsed, ownerId);
   }
@@ -140,7 +141,7 @@ export class AnalysisController {
     req: Request,
     zipSource: string | undefined,
   ): Promise<string | undefined> {
-    const ownerId = await getOwnerId(req);
+    const ownerId = await getOwnerId(req, this.config);
     if (zipSource && !ownerId) throw new UnauthorizedAppError();
     return ownerId;
   }

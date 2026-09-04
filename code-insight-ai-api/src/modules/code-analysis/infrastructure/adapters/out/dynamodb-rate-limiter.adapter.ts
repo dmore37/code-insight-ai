@@ -4,6 +4,10 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { RateLimiterPort } from '../../../domain/ports/out/rate-limiter.port';
+import {
+  DEFAULT_AWS_REGION,
+  DEFAULT_DYNAMODB_TABLE_NAME,
+} from '../../config/defaults';
 
 /**
  * Adaptador de salida: cuota diaria de uso, implementada como un
@@ -25,14 +29,14 @@ export class DynamoDbRateLimiterAdapter implements RateLimiterPort {
 
   constructor(private readonly config: ConfigService) {
     const raw = new DynamoDBClient({
-      region: this.config.get<string>('AWS_REGION', 'us-east-1'),
+      region: this.config.get<string>('AWS_REGION', DEFAULT_AWS_REGION),
     });
     this.client = DynamoDBDocumentClient.from(raw, {
       marshallOptions: { removeUndefinedValues: true },
     });
     this.tableName = this.config.get<string>(
       'DYNAMODB_TABLE_NAME',
-      'code-insight-ai-analysis-history',
+      DEFAULT_DYNAMODB_TABLE_NAME,
     );
   }
 

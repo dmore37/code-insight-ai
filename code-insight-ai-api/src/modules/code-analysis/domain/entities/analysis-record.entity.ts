@@ -3,14 +3,21 @@ import { AnalysisResult } from './analysis-result.entity';
 /**
  * Estado del ciclo de vida de un análisis procesado de forma asíncrona.
  */
-export type AnalysisStatus = 'processing' | 'completed' | 'failed';
+export enum AnalysisStatus {
+  Processing = 'processing',
+  Completed = 'completed',
+  Failed = 'failed',
+}
 
 /**
  * Visibilidad de un registro: "public" (análisis por URL git, visible en
  * el feed general) o "private" (análisis por ZIP, solo visible para su
  * dueño, identificado por `ownerId`).
  */
-export type AnalysisVisibility = 'public' | 'private';
+export enum AnalysisVisibility {
+  Public = 'public',
+  Private = 'private',
+}
 
 /**
  * Registro persistido en DynamoDB que representa el estado (y, cuando
@@ -31,7 +38,7 @@ export class AnalysisRecord {
     public readonly result?: AnalysisResult,
     public readonly errorMessage?: string,
     public readonly ownerId?: string,
-    public readonly visibility: AnalysisVisibility = 'public',
+    public readonly visibility: AnalysisVisibility = AnalysisVisibility.Public,
     public readonly zipS3Key?: string,
     /** Hash SHA-256 del contenido del ZIP (calculado en el frontend), usado para cachear resultados y evitar reanalizar el mismo archivo. */
     public readonly zipHash?: string,
@@ -51,10 +58,12 @@ export class AnalysisRecord {
     // Público: análisis por URL git (aparece en el feed general).
     // Privado: análisis por ZIP (local o subido a S3), solo visible para
     // su dueño a través del GSI "byOwner".
-    const visibility: AnalysisVisibility = source.gitUrl ? 'public' : 'private';
+    const visibility: AnalysisVisibility = source.gitUrl
+      ? AnalysisVisibility.Public
+      : AnalysisVisibility.Private;
     return new AnalysisRecord(
       id,
-      'processing',
+      AnalysisStatus.Processing,
       now,
       now,
       source.gitUrl,
@@ -71,7 +80,7 @@ export class AnalysisRecord {
   withCompleted(result: AnalysisResult): AnalysisRecord {
     return new AnalysisRecord(
       this.id,
-      'completed',
+      AnalysisStatus.Completed,
       this.createdAt,
       new Date().toISOString(),
       this.gitUrl,
@@ -88,7 +97,7 @@ export class AnalysisRecord {
   withFailed(errorMessage: string): AnalysisRecord {
     return new AnalysisRecord(
       this.id,
-      'failed',
+      AnalysisStatus.Failed,
       this.createdAt,
       new Date().toISOString(),
       this.gitUrl,

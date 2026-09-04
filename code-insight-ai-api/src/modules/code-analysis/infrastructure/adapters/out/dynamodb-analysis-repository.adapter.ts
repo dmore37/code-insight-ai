@@ -8,7 +8,20 @@ import {
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { AnalysisRepositoryPort } from '../../../domain/ports/out/analysis-repository.port';
-import { AnalysisRecord } from '../../../domain/entities/analysis-record.entity';
+import {
+  AnalysisRecord,
+  AnalysisStatus,
+  AnalysisVisibility,
+} from '../../../domain/entities/analysis-record.entity';
+import { RETENTION_DAYS } from '../../../domain/config/business-rules.constants';
+import {
+  DEFAULT_AWS_REGION,
+  DEFAULT_DYNAMODB_TABLE_NAME,
+  DEFAULT_DYNAMODB_GSI_NAME,
+  DEFAULT_DYNAMODB_GITURL_GSI_NAME,
+  DEFAULT_DYNAMODB_OWNER_GSI_NAME,
+  DEFAULT_DYNAMODB_ZIPHASH_GSI_NAME,
+} from '../../config/defaults';
 
 /**
  * Adaptador de salida: persiste el historial de análisis en DynamoDB.
@@ -35,34 +48,34 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
   private readonly ownerGsiName: string;
   private readonly zipHashGsiName: string;
   private static readonly GSI_PK_VALUE = 'ALL';
-  private static readonly RETENTION_DAYS = 90;
+  private static readonly RETENTION_DAYS = RETENTION_DAYS;
 
   constructor(private readonly config: ConfigService) {
     const raw = new DynamoDBClient({
-      region: this.config.get<string>('AWS_REGION', 'us-east-1'),
+      region: this.config.get<string>('AWS_REGION', DEFAULT_AWS_REGION),
     });
     this.client = DynamoDBDocumentClient.from(raw, {
       marshallOptions: { removeUndefinedValues: true },
     });
     this.tableName = this.config.get<string>(
       'DYNAMODB_TABLE_NAME',
-      'code-insight-ai-analysis-history',
+      DEFAULT_DYNAMODB_TABLE_NAME,
     );
     this.gsiName = this.config.get<string>(
       'DYNAMODB_GSI_NAME',
-      'byCreatedAt',
+      DEFAULT_DYNAMODB_GSI_NAME,
     );
     this.gitUrlGsiName = this.config.get<string>(
       'DYNAMODB_GITURL_GSI_NAME',
-      'byGitUrl',
+      DEFAULT_DYNAMODB_GITURL_GSI_NAME,
     );
     this.ownerGsiName = this.config.get<string>(
       'DYNAMODB_OWNER_GSI_NAME',
-      'byOwner',
+      DEFAULT_DYNAMODB_OWNER_GSI_NAME,
     );
     this.zipHashGsiName = this.config.get<string>(
       'DYNAMODB_ZIPHASH_GSI_NAME',
-      'byZipHash',
+      DEFAULT_DYNAMODB_ZIPHASH_GSI_NAME,
     );
   }
 
@@ -76,7 +89,7 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
           // de modo que el feed general (GSI "byCreatedAt") no incluya
           // análisis privados (ZIP) de otros usuarios.
           gsiPk:
-            record.visibility === 'public'
+            record.visibility === AnalysisVisibility.Public
               ? DynamoDbAnalysisRepositoryAdapter.GSI_PK_VALUE
               : undefined,
           status: record.status,
@@ -170,7 +183,7 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
       }),
     );
     const completedItem = (response.Items ?? []).find(
-      (item) => item.status === 'completed',
+      (item) => item.status === AnalysisStatus.Completed,
     );
     return completedItem ? this.toEntity(completedItem) : null;
   }
@@ -186,7 +199,7 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
       item.result,
       item.errorMessage,
       item.ownerId,
-      item.visibility ?? 'public',
+      item.visibility ?? AnalysisVisibility.Public,
       item.zipS3Key,
       item.zipHash,
     );
@@ -211,7 +224,7 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
       }),
     );
     const completedItem = (response.Items ?? []).find(
-      (item) => item.status === 'completed',
+      (item) => item.status === AnalysisStatus.Completed,
     );
     return completedItem ? this.toEntity(completedItem) : null;
   }

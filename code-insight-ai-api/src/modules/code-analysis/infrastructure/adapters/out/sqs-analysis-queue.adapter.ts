@@ -5,6 +5,7 @@ import {
   AnalysisQueuePort,
   AnalysisJobMessage,
 } from '../../../domain/ports/out/analysis-queue.port';
+import { DEFAULT_AWS_REGION } from '../../config/defaults';
 
 /**
  * Adaptador de salida: publica trabajos de análisis en una cola SQS para
@@ -18,7 +19,7 @@ export class SqsAnalysisQueueAdapter implements AnalysisQueuePort {
 
   constructor(private readonly config: ConfigService) {
     this.client = new SQSClient({
-      region: this.config.get<string>('AWS_REGION', 'us-east-1'),
+      region: this.config.get<string>('AWS_REGION', DEFAULT_AWS_REGION),
     });
     this.queueUrl = this.config.get<string>('SQS_QUEUE_URL', '');
   }

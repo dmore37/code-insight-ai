@@ -1,11 +1,12 @@
-export type ArchitecturePattern =
-  | 'Monolito'
-  | 'MVC'
-  | 'Clean Architecture'
-  | 'Hexagonal'
-  | 'Microservicios'
-  | 'N-Capas'
-  | 'Indeterminado';
+export enum ArchitecturePattern {
+  Monolith = 'Monolito',
+  Mvc = 'MVC',
+  CleanArchitecture = 'Clean Architecture',
+  Hexagonal = 'Hexagonal',
+  Microservices = 'Microservicios',
+  NLayers = 'N-Capas',
+  Undetermined = 'Indeterminado',
+}
 
 export interface GeneralInfo {
   projectName: string;
@@ -14,15 +15,18 @@ export interface GeneralInfo {
   approxFileCount: number;
 }
 
+export enum DetectedComponentType {
+  Controller = 'Controller',
+  Service = 'Service',
+  Repository = 'Repository',
+  Model = 'Model',
+  AngularComponent = 'AngularComponent',
+  ConsumedApi = 'ConsumedApi',
+  Other = 'Other',
+}
+
 export interface DetectedComponent {
-  type:
-    | 'Controller'
-    | 'Service'
-    | 'Repository'
-    | 'Model'
-    | 'AngularComponent'
-    | 'ConsumedApi'
-    | 'Other';
+  type: DetectedComponentType;
   name: string;
   path: string;
 }

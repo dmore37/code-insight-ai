@@ -7,7 +7,10 @@ import simpleGit from 'simple-git';
 import AdmZip from 'adm-zip';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { RepoFetcherPort } from '../../../domain/ports/out/repo-fetcher.port';
-import { RepositorySource } from '../../../domain/entities/repository-source.entity';
+import {
+  RepositorySource,
+  RepositorySourceType,
+} from '../../../domain/entities/repository-source.entity';
 import { extractZipDisplayName } from '../../../domain/utils/zip-display-name.util';
 
 /**
@@ -36,7 +39,7 @@ export class FilesystemRepoFetcherAdapter implements RepoFetcherPort {
     const git = simpleGit();
     await git.clone(gitUrl, workDir, ['--depth', '1']);
 
-    return new RepositorySource('git', workDir, gitUrl);
+    return new RepositorySource(RepositorySourceType.Git, workDir, gitUrl);
   }
 
   async fetchFromZip(zipFilePath: string): Promise<RepositorySource> {
@@ -46,7 +49,7 @@ export class FilesystemRepoFetcherAdapter implements RepoFetcherPort {
     const zip = new AdmZip(zipFilePath);
     zip.extractAllTo(workDir, true);
 
-    return new RepositorySource('zip', workDir, zipFilePath);
+    return new RepositorySource(RepositorySourceType.Zip, workDir, zipFilePath);
   }
 
   async fetchFromS3Zip(zipS3Key: string): Promise<RepositorySource> {
@@ -73,7 +76,7 @@ export class FilesystemRepoFetcherAdapter implements RepoFetcherPort {
     // Se usa el nombre original del archivo (si el frontend lo envió al
     // pedir la URL prefirmada, embebido en el key) en vez del key completo,
     // para que el resumen del análisis muestre un nombre legible.
-    return new RepositorySource('zip', workDir, extractZipDisplayName(zipS3Key));
+    return new RepositorySource(RepositorySourceType.Zip, workDir, extractZipDisplayName(zipS3Key));
   }
 
   async cleanup(source: RepositorySource): Promise<void> {

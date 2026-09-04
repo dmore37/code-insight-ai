@@ -2,29 +2,33 @@ import { Component, inject, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AnalysisHistoryPort } from '../../core/code-analysis/domain/ports/analysis-history.port';
+import { AnalysisStatus } from '../../core/code-analysis/domain/models/analysis-record.model';
 import { AnalysisStateService } from '../analysis-result/analysis-state.service';
 import { AnalysisHistoryComponent } from '../analysis-history/analysis-history.component';
 import { AuthPort } from '../../core/auth/domain/ports/auth.port';
 import { computeFileSha256 } from '../../core/code-analysis/domain/utils/file-hash.util';
-
-const POLL_INTERVAL_MS = 1500;
-const POLL_TIMEOUT_MS = 60_000;
+import {
+  SUBMIT_POLL_INTERVAL_MS,
+  SUBMIT_POLL_TIMEOUT_MS,
+} from '../../core/code-analysis/config/ui.constants';
 
 type UploadMode = 'url' | 'zip';
 
 /** Pasos del progreso mostrado mientras `isLoading()` es true. */
-export type AnalysisStep =
-  | 'uploading'
-  | 'queued'
-  | 'processing'
-  | 'finishing';
+export enum AnalysisStep {
+  Uploading = 'uploading',
+  Queued = 'queued',
+  Processing = 'processing',
+  Finishing = 'finishing',
+}
 
 const STEP_ORDER: AnalysisStep[] = [
-  'uploading',
-  'queued',
-  'processing',
-  'finishing',
+  AnalysisStep.Uploading,
+  AnalysisStep.Queued,
+  AnalysisStep.Processing,
+  AnalysisStep.Finishing,
 ];
+
 
 /**
  * Sección 1 del reto: carga de repositorio.
@@ -63,24 +67,24 @@ export class RepoUploadComponent {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   /** Paso actual del progreso, mostrado mientras `isLoading()` es true. */
-  currentStep = signal<AnalysisStep>('queued');
+  currentStep = signal<AnalysisStep>(AnalysisStep.Queued);
 
   /** Pasos a mostrar según el modo (por URL no hay paso de "subiendo"). */
   stepsForMode(): AnalysisStep[] {
     return this.mode() === 'zip'
       ? STEP_ORDER
-      : STEP_ORDER.filter((step) => step !== 'uploading');
+      : STEP_ORDER.filter((step) => step !== AnalysisStep.Uploading);
   }
 
   stepLabel(step: AnalysisStep): string {
     switch (step) {
-      case 'uploading':
+      case AnalysisStep.Uploading:
         return 'Subiendo ZIP';
-      case 'queued':
+      case AnalysisStep.Queued:
         return 'Encolando análisis';
-      case 'processing':
+      case AnalysisStep.Processing:
         return 'Analizando (estático + IA)';
-      case 'finishing':
+      case AnalysisStep.Finishing:
         return 'Finalizando';
     }
   }
@@ -121,7 +125,7 @@ export class RepoUploadComponent {
 
     this.errorMessage.set(null);
     this.isLoading.set(true);
-    this.currentStep.set('queued');
+    this.currentStep.set(AnalysisStep.Queued);
 
     try {
       const submitResponse = await this.analysisHistory.submitAsync({
@@ -154,7 +158,7 @@ export class RepoUploadComponent {
 
     this.errorMessage.set(null);
     this.isLoading.set(true);
-    this.currentStep.set('uploading');
+    this.currentStep.set(AnalysisStep.Uploading);
 
     try {
       // Hash del contenido ANTES de subir: permite al backend detectar
@@ -184,7 +188,7 @@ export class RepoUploadComponent {
         return;
       }
 
-      this.currentStep.set('queued');
+      this.currentStep.set(AnalysisStep.Queued);
       const submitResponse = await this.analysisHistory.submitAsync({
         zipS3Key: key,
         zipHash,
@@ -213,17 +217,17 @@ export class RepoUploadComponent {
     // Si ya vino resuelto (cache hit: completed/failed de inmediato),
     // no hace falta refrescar el historial dos veces ni hacer polling.
     const record =
-      submitResponse.data.status === 'processing'
+      submitResponse.data.status === AnalysisStatus.Processing
         ? await this.pollAndRefresh(submitResponse.data.id)
         : submitResponse.data;
 
-    this.currentStep.set('finishing');
+    this.currentStep.set(AnalysisStep.Finishing);
     this.historyList?.load();
 
-    if (record.status === 'completed' && record.result) {
+    if (record.status === AnalysisStatus.Completed && record.result) {
       this.analysisState.setResult(record.result);
       this.router.navigateByUrl('/resultado');
-    } else if (record.status === 'failed') {
+    } else if (record.status === AnalysisStatus.Failed) {
       this.errorMessage.set(
         record.errorMessage ?? 'El análisis falló sin detalle adicional.',
       );
@@ -242,20 +246,20 @@ export class RepoUploadComponent {
    */
   private async pollAndRefresh(id: string) {
     this.historyList?.load();
-    this.currentStep.set('processing');
+    this.currentStep.set(AnalysisStep.Processing);
     return this.pollUntilFinished(id);
   }
 
   private async pollUntilFinished(id: string) {
     const start = Date.now();
 
-    while (Date.now() - start < POLL_TIMEOUT_MS) {
+    while (Date.now() - start < SUBMIT_POLL_TIMEOUT_MS) {
       const response = await this.analysisHistory.getStatus(id);
-      if (response.success && response.data.status !== 'processing') {
+      if (response.success && response.data.status !== AnalysisStatus.Processing) {
         return response.data;
       }
       if (response.success) {
-        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+        await new Promise((resolve) => setTimeout(resolve, SUBMIT_POLL_INTERVAL_MS));
         continue;
       }
       // Error de negocio consultando el estado: se detiene el polling.
