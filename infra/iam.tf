@@ -39,3 +39,41 @@ resource "aws_iam_role_policy" "bedrock_invoke" {
   role   = aws_iam_role.lambda_role.id
   policy = data.aws_iam_policy_document.bedrock_invoke.json
 }
+
+# Permite leer/escribir el historial de análisis en DynamoDB (tabla + GSI)
+data "aws_iam_policy_document" "dynamodb_analysis_history" {
+  statement {
+    effect  = "Allow"
+    actions = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:Query"]
+    resources = [
+      aws_dynamodb_table.analysis_history.arn,
+      "${aws_dynamodb_table.analysis_history.arn}/index/*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "dynamodb_analysis_history" {
+  name   = "DynamoDbAnalysisHistory"
+  role   = aws_iam_role.lambda_role.id
+  policy = data.aws_iam_policy_document.dynamodb_analysis_history.json
+}
+
+# Permite publicar en la cola de trabajos y consumirla (event source mapping)
+data "aws_iam_policy_document" "sqs_analysis_jobs" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sqs:SendMessage",
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+    ]
+    resources = [aws_sqs_queue.analysis_jobs.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "sqs_analysis_jobs" {
+  name   = "SqsAnalysisJobs"
+  role   = aws_iam_role.lambda_role.id
+  policy = data.aws_iam_policy_document.sqs_analysis_jobs.json
+}

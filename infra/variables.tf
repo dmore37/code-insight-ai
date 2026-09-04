@@ -17,9 +17,9 @@ variable "bedrock_model_id" {
 }
 
 variable "lambda_timeout_seconds" {
-  description = "Timeout de la función Lambda, en segundos."
+  description = "Timeout de la función Lambda, en segundos. Debe ser suficiente para el worker asíncrono de SQS (clonado + análisis estático + IA), no solo para la API síncrona."
   type        = number
-  default     = 60
+  default     = 300
 }
 
 variable "lambda_memory_mb" {
@@ -38,4 +38,10 @@ variable "enable_cloudfront" {
   description = "Si es true, crea una distribución de CloudFront delante del bucket S3 del frontend."
   type        = bool
   default     = false
+}
+
+variable "sqs_visibility_timeout_seconds" {
+  description = "Visibility timeout de la cola SQS de análisis; debe ser >= lambda_timeout_seconds."
+  type        = number
+  default     = 300
 }

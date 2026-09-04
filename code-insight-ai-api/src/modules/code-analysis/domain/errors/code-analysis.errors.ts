@@ -42,6 +42,27 @@ export class StaticAnalysisError extends AppError {
   }
 }
 
+/** No existe un registro de análisis con el id solicitado */
+export class AnalysisNotFoundError extends AppError {
+  readonly code = 'ANALYSIS_NOT_FOUND';
+
+  constructor(id: string) {
+    super(`No se encontró un análisis con id "${id}".`);
+  }
+}
+
+/** Falló el encolado del trabajo asíncrono en la cola */
+export class AnalysisQueueError extends AppError {
+  readonly code = 'ANALYSIS_QUEUE_FAILED';
+
+  constructor(cause?: unknown) {
+    super(
+      'No fue posible encolar el análisis para procesamiento asíncrono.',
+      cause instanceof Error ? cause.message : cause,
+    );
+  }
+}
+
 /** Falló la etapa de análisis con IA (Bedrock u otro proveedor) */
 export class AiAnalysisError extends AppError {
   readonly code = 'AI_ANALYSIS_FAILED';

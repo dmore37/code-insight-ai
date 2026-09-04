@@ -17,17 +17,17 @@ resource "aws_cloudfront_distribution" "web" {
 
     custom_origin_config {
       http_port              = 80
-      https_port              = 443
-      origin_protocol_policy  = "http-only"
-      origin_ssl_protocols    = ["TLSv1.2"]
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
   default_cache_behavior {
     target_origin_id       = "s3-website-origin"
-    viewer_protocol_policy  = "redirect-to-https"
-    allowed_methods         = ["GET", "HEAD"]
-    cached_methods          = ["GET", "HEAD"]
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
 
     # Cache policy administrada por AWS: "CachingOptimized"
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"

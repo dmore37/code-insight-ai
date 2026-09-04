@@ -22,3 +22,13 @@ output "lambda_function_name" {
   description = "Nombre de la función Lambda desplegada."
   value       = aws_lambda_function.api.function_name
 }
+
+output "dynamodb_table_name" {
+  description = "Nombre de la tabla DynamoDB con el historial de análisis."
+  value       = aws_dynamodb_table.analysis_history.name
+}
+
+output "sqs_queue_url" {
+  description = "URL de la cola SQS de trabajos de análisis asíncronos."
+  value       = aws_sqs_queue.analysis_jobs.url
+}

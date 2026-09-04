@@ -12,7 +12,10 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      BEDROCK_MODEL_ID = var.bedrock_model_id
+      BEDROCK_MODEL_ID    = var.bedrock_model_id
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.analysis_history.name
+      DYNAMODB_GSI_NAME   = "byCreatedAt"
+      SQS_QUEUE_URL       = aws_sqs_queue.analysis_jobs.url
     }
   }
 
@@ -21,6 +24,8 @@ resource "aws_lambda_function" "api" {
     null_resource.docker_build_push,
     aws_iam_role_policy_attachment.lambda_basic_execution,
     aws_iam_role_policy.bedrock_invoke,
+    aws_iam_role_policy.dynamodb_analysis_history,
+    aws_iam_role_policy.sqs_analysis_jobs,
   ]
 }
 

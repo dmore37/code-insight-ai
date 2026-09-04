@@ -57,7 +57,10 @@ resource "aws_s3_bucket_policy" "web_public_read" {
 # ============================================================
 locals {
   web_source_dir = "${path.module}/../code-insight-ai-web"
-  api_invoke_url = aws_apigatewayv2_stage.default.invoke_url
+  # invoke_url de API Gateway siempre termina en "/"; se recorta para
+  # evitar dobles slashes al concatenar rutas en el frontend (ej.
+  # "${apiBaseUrl}/analysis").
+  api_invoke_url = trimsuffix(aws_apigatewayv2_stage.default.invoke_url, "/")
 }
 
 resource "null_resource" "frontend_build_deploy" {
