@@ -38,12 +38,6 @@ interface FileEntry {
   ext: string;
 }
 
-/**
- * Adaptador de salida: analiza estáticamente el proyecto mediante
- * heurísticas (sin IA): conteo de archivos, detección de framework
- * por archivos de manifiesto, y detección de componentes por
- * convención de carpetas/decoradores.
- */
 @Injectable()
 export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
   async analyze(source: RepositorySource): Promise<StaticAnalysisResult> {
@@ -115,7 +109,7 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
         const content = JSON.parse(readFileSync(pkgJson.fullPath, 'utf-8'));
         if (content.name) return content.name;
       } catch {
-        /* ignore parse errors */
+
       }
     }
     const parts = source.originalReference.split(/[/\\]/).filter(Boolean);
@@ -242,7 +236,7 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
           const content = readFileSync(file.fullPath, 'utf-8').slice(0, 2000);
           result.push({ path: file.relativePath, content });
         } catch {
-          /* ignore */
+
         }
       }
     }

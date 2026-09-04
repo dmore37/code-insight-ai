@@ -7,11 +7,6 @@ import {
 } from '../../../domain/ports/out/analysis-queue.port';
 import { DEFAULT_AWS_REGION } from '../../config/defaults';
 
-/**
- * Adaptador de salida: publica trabajos de análisis en una cola SQS para
- * que sean procesados de forma asíncrona por un consumidor (event source
- * mapping de Lambda).
- */
 @Injectable()
 export class SqsAnalysisQueueAdapter implements AnalysisQueuePort {
   private readonly client: SQSClient;

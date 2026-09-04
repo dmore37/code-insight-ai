@@ -14,12 +14,6 @@ import { AuthUser } from '../domain/models/auth-user.model';
 
 const ID_TOKEN_STORAGE_KEY = 'codeInsightAi.idToken';
 
-/**
- * Adaptador de infraestructura: implementa el login/registro contra el
- * User Pool de Cognito usando el SDK directamente desde el navegador
- * (App Client sin secreto, apto para SPA). El idToken (JWT) se persiste
- * en localStorage para sobrevivir recargas de página.
- */
 @Injectable({ providedIn: 'root' })
 export class CognitoAuthAdapter implements AuthPort {
   private readonly client = new CognitoIdentityProviderClient({
@@ -131,7 +125,7 @@ export class CognitoAuthAdapter implements AuthPort {
     const token = localStorage.getItem(ID_TOKEN_STORAGE_KEY);
     if (!token) return null;
     const user = this.decodeUser(token);
-    // Si el token ya expiró, se descarta la sesión restaurada.
+
     if (user && this.isExpired(token)) {
       localStorage.removeItem(ID_TOKEN_STORAGE_KEY);
       return null;
@@ -139,7 +133,6 @@ export class CognitoAuthAdapter implements AuthPort {
     return user;
   }
 
-  /** Decodifica el payload de un JWT (sin verificar firma; solo lectura local). */
   private decodeUser(idToken: string): AuthUser | null {
     try {
       const payload = JSON.parse(atob(idToken.split('.')[1]));

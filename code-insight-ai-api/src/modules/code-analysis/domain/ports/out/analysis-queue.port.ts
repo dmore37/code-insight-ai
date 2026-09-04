@@ -1,6 +1,4 @@
-/**
- * Mensaje encolado para que un worker asíncrono procese el análisis.
- */
+
 export interface AnalysisJobMessage {
   id: string;
   gitUrl?: string;
@@ -8,10 +6,6 @@ export interface AnalysisJobMessage {
   zipS3Key?: string;
 }
 
-/**
- * Puerto de salida para encolar trabajos de análisis asíncronos
- * (implementado en infraestructura por un adaptador de SQS).
- */
 export abstract class AnalysisQueuePort {
   abstract enqueue(job: AnalysisJobMessage): Promise<void>;
 }

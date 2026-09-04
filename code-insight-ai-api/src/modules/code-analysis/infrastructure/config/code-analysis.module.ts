@@ -29,11 +29,6 @@ import {
   RATE_LIMITER_PORT,
 } from './tokens';
 
-/**
- * Módulo de wiring de la arquitectura hexagonal: conecta cada puerto con su
- * adaptador concreto. El dominio (services, entities, ports) no conoce
- * Nest ni AWS; solo esta capa de infraestructura los conoce.
- */
 @Module({
   controllers: [AnalysisController],
   providers: [

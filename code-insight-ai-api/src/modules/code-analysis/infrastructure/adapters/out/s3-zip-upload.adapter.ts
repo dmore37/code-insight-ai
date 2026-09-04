@@ -7,14 +7,6 @@ import { ZipUploadPort, PresignedUpload } from '../../../domain/ports/out/zip-up
 import { UPLOAD_URL_TTL_SECONDS } from '../../../domain/config/business-rules.constants';
 import { DEFAULT_AWS_REGION } from '../../config/defaults';
 
-/**
- * Adaptador de salida: genera URLs prefirmadas de S3 (PUT) para que el
- * navegador suba un ZIP directamente al bucket de uploads, evitando pasar
- * el archivo por Lambda/API Gateway (límite de payload de 10MB).
- *
- * La key generada incluye el `ownerId` (o "anonymous") como prefijo, de
- * forma que en el futuro se pueda restringir/organizar por usuario.
- */
 @Injectable()
 export class S3ZipUploadAdapter implements ZipUploadPort {
   private readonly s3Client: S3Client;
@@ -50,11 +42,6 @@ export class S3ZipUploadAdapter implements ZipUploadPort {
     return { uploadUrl, key };
   }
 
-  /**
-   * Sanitiza el nombre de archivo original para usarlo como sufijo del key
-   * de S3: solo alfanuméricos, punto, guion y guion_bajo; se acota la
-   * longitud para evitar keys extremadamente largos.
-   */
   private sanitizeFileName(fileName?: string): string | undefined {
     if (!fileName) return undefined;
     const cleaned = fileName

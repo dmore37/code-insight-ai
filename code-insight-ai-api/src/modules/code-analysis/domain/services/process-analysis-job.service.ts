@@ -5,12 +5,6 @@ import { AnalysisRepositoryPort } from '../ports/out/analysis-repository.port';
 import { AnalysisJobMessage } from '../ports/out/analysis-queue.port';
 import { ANALYSIS_REPOSITORY_PORT } from '../../infrastructure/config/tokens';
 
-/**
- * Caso de uso ejecutado por el worker asíncrono (consumidor de SQS):
- * reutiliza el mismo `AnalyzeRepositoryUseCase` síncrono (fetch + static +
- * IA) y, al terminar, persiste el resultado (completed) o el error
- * (failed) en el historial de DynamoDB.
- */
 @Injectable()
 export class ProcessAnalysisJobService implements ProcessAnalysisJobUseCase {
   private readonly logger = new Logger(ProcessAnalysisJobService.name);

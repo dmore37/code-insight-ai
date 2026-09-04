@@ -1,6 +1,5 @@
 import { AppError } from '../../../../shared/errors/app-error';
 
-/** El comando de entrada no trae ni URL git ni ruta de ZIP */
 export class MissingRepositorySourceError extends AppError {
   readonly code = 'MISSING_REPOSITORY_SOURCE';
 
@@ -9,7 +8,6 @@ export class MissingRepositorySourceError extends AppError {
   }
 }
 
-/** La URL git recibida no es válida o no es pública/accesible */
 export class InvalidGitUrlError extends AppError {
   readonly code = 'INVALID_GIT_URL';
 
@@ -18,7 +16,6 @@ export class InvalidGitUrlError extends AppError {
   }
 }
 
-/** Falló el clonado del repositorio (red, repo privado, no existe, etc.) */
 export class RepoFetchError extends AppError {
   readonly code = 'REPO_FETCH_FAILED';
 
@@ -30,7 +27,6 @@ export class RepoFetchError extends AppError {
   }
 }
 
-/** Falló el análisis estático del código ya descargado */
 export class StaticAnalysisError extends AppError {
   readonly code = 'STATIC_ANALYSIS_FAILED';
 
@@ -42,7 +38,6 @@ export class StaticAnalysisError extends AppError {
   }
 }
 
-/** No existe un registro de análisis con el id solicitado */
 export class AnalysisNotFoundError extends AppError {
   readonly code = 'ANALYSIS_NOT_FOUND';
 
@@ -51,7 +46,6 @@ export class AnalysisNotFoundError extends AppError {
   }
 }
 
-/** Falló el encolado del trabajo asíncrono en la cola */
 export class AnalysisQueueError extends AppError {
   readonly code = 'ANALYSIS_QUEUE_FAILED';
 
@@ -63,7 +57,6 @@ export class AnalysisQueueError extends AppError {
   }
 }
 
-/** Falló la etapa de análisis con IA (Bedrock u otro proveedor) */
 export class AiAnalysisError extends AppError {
   readonly code = 'AI_ANALYSIS_FAILED';
 

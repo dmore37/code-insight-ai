@@ -33,7 +33,7 @@ export interface DetectedComponent {
 
 export interface ArchitectureInference {
   pattern: ArchitecturePattern;
-  confidence: number; // 0-1
+  confidence: number;
   evidences: string[];
 }
 
@@ -47,9 +47,6 @@ export interface Findings {
   risks: string[];
 }
 
-/**
- * Entidad raíz del dominio: resultado completo del análisis de un repositorio.
- */
 export class AnalysisResult {
   constructor(
     public readonly id: string,

@@ -4,20 +4,6 @@ import type { INestApplication } from '@nestjs/common';
 import { createNestApp } from './create-app';
 import { ProcessAnalysisJobUseCase } from './modules/code-analysis/domain/ports/in/process-analysis-job.use-case';
 
-/**
- * Entry point para AWS Lambda (imagen Docker).
- *
- * Este mismo Lambda atiende dos tipos de evento:
- * 1. Peticiones HTTP desde API Gateway: se delegan a Express vía
- *    @vendia/serverless-express (comportamiento original).
- * 2. Mensajes de la cola SQS (event source mapping): se detectan porque
- *    el evento trae `Records` con `eventSource === "aws:sqs"`, y en ese
- *    caso se ejecuta el worker asíncrono (ProcessAnalysisJobUseCase) por
- *    cada mensaje, sin pasar por Express/API Gateway.
- *
- * La inicialización de Nest (costosa) se cachea entre invocaciones dentro
- * de la misma instancia de Lambda ("cold start" solo la primera vez).
- */
 let cachedApp: INestApplication;
 let cachedHttpHandler: Handler;
 

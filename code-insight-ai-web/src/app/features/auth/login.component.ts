@@ -5,11 +5,6 @@ import { AuthPort } from '../../core/auth/domain/ports/auth.port';
 
 type AuthMode = 'login' | 'signup' | 'confirm' | 'forgot' | 'reset';
 
-/**
- * Pantalla única de autenticación: login, registro y confirmación de
- * código (Cognito exige confirmar el email tras el signup). Se alterna
- * entre los tres modos con un toggle simple.
- */
 @Component({
   selector: 'app-login',
   standalone: true,

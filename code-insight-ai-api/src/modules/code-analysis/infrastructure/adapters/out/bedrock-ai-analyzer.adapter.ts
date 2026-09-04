@@ -14,22 +14,6 @@ import { DEFAULT_AWS_REGION } from '../../config/defaults';
 
 const VALID_PATTERNS: ArchitecturePattern[] = Object.values(ArchitecturePattern);
 
-/**
- * Adaptador de salida: usa Amazon Bedrock para generar el análisis funcional,
- * la inferencia de arquitectura y las recomendaciones/riesgos, a partir del
- * resultado del análisis estático.
- *
- * Soporta dos familias de modelos con formatos de request/response distintos:
- * - Amazon Nova (amazon.nova-*): formato "messages" con content:[{text}] e
- *   inferenceConfig.maxTokens. Respuesta en output.message.content[0].text.
- * - Anthropic Claude (anthropic.*): formato anthropic_version + max_tokens.
- *   Respuesta en content[0].text.
- *
- * El modelo por defecto es Amazon Nova Lite porque, en cuentas AWS con
- * restricciones organizacionales (SCP) sobre AWS Marketplace, los modelos de
- * terceros como Claude pueden quedar bloqueados (AccessDeniedException),
- * mientras que los modelos nativos de Amazon no requieren esa suscripción.
- */
 @Injectable()
 export class BedrockAiAnalyzerAdapter implements AiAnalyzerPort {
   private readonly logger = new Logger(BedrockAiAnalyzerAdapter.name);
@@ -159,7 +143,6 @@ ${staticResult.keyFileExcerpts.map((f) => `--- ${f.path} ---\n${f.content}`).joi
     };
   }
 
-  /** Fallback simple si Bedrock no está disponible (permisos, red, etc.) */
   private fallback(staticResult: StaticAnalysisResult): AiAnalysisResult {
     return {
       functional: {

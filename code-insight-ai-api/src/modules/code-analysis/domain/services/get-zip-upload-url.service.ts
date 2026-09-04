@@ -3,10 +3,6 @@ import { GetZipUploadUrlUseCase } from '../ports/in/get-zip-upload-url.use-case'
 import { ZipUploadPort, PresignedUpload } from '../ports/out/zip-upload.port';
 import { ZIP_UPLOAD_PORT } from '../../infrastructure/config/tokens';
 
-/**
- * Caso de uso: delega en el puerto de salida la generación de la URL
- * prefirmada de S3 para subir un ZIP directamente desde el navegador.
- */
 @Injectable()
 export class GetZipUploadUrlService implements GetZipUploadUrlUseCase {
   constructor(

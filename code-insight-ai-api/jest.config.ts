@@ -22,8 +22,24 @@ const config: Config = {
     'src/**/*.(t|j)s',
     'libs/**/*.(t|j)s',
     'apps/**/*.(t|j)s',
+    '!src/main.ts',
+    '!src/handler.ts',
+    '!src/create-app.ts',
+    '!src/app.module.ts',
+    '!src/**/*.module.ts',
+    '!src/**/config/tokens.ts',
+    '!src/**/ports/in/**',
+    '!src/**/ports/out/**',
   ],
   coverageDirectory: './coverage',
+  coverageThreshold: {
+    global: {
+      statements: 90,
+      branches: 75,
+      functions: 90,
+      lines: 90,
+    },
+  },
   testEnvironment: 'node',
 };
 

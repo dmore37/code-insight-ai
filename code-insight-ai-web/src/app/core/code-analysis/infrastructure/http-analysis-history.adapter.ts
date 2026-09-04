@@ -10,11 +10,6 @@ import {
 } from '../domain/ports/analysis-history.port';
 import { AnalyzeRepositoryCommand } from '../domain/ports/analysis-repository.port';
 
-/**
- * Adaptador de infraestructura: implementa el puerto de historial usando
- * HttpClient contra `POST /analysis/async` (envío asíncrono), y
- * `GET /analysis` / `GET /analysis/:id` (historial y estado).
- */
 @Injectable({ providedIn: 'root' })
 export class HttpAnalysisHistoryAdapter implements AnalysisHistoryPort {
   private readonly http = inject(HttpClient);

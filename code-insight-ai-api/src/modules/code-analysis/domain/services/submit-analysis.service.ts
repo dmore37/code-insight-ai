@@ -12,23 +12,6 @@ import {
 import { MissingRepositorySourceError, AnalysisQueueError } from '../errors/code-analysis.errors';
 import { CACHE_TTL_MS } from '../config/business-rules.constants';
 
-/**
- * Caso de uso: encola una solicitud de análisis para procesamiento
- * asíncrono. Crea de inmediato el registro con status "processing" en
- * DynamoDB y publica el trabajo en SQS; el worker asíncrono (consumidor de
- * la cola) se encarga de completar el análisis y actualizar el registro.
- *
- * Caché por gitUrl: si ya existe un análisis "completed" reciente (menos
- * de 1 hora) para la misma URL, se reutiliza tal cual (mismo registro,
- * sin crear uno nuevo ni volver a llamar a Bedrock/SQS). Esto evita
- * repetir análisis costosos para URLs consultadas varias veces seguidas.
- *
- * Caché por zipHash: mismo mecanismo, pero para ZIPs subidos, usando el
- * hash SHA-256 del contenido (calculado en el cliente) como clave, ya
- * que dos subidas del mismo archivo generan keys de S3 distintas
- * (incluyen un UUID), pero el contenido —y por lo tanto el hash— es
- * idéntico.
- */
 @Injectable()
 export class SubmitAnalysisService implements SubmitAnalysisUseCase {
   constructor(
@@ -84,12 +67,6 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
     return record;
   }
 
-  /**
-   * Solo cuenta como "caché válido" si el análisis "completed" más
-   * reciente encontrado por `finder` tiene menos de `CACHE_TTL_MS`; caso
-   * contrario (o si no existe ninguno), devuelve null y se ejecuta el
-   * flujo normal.
-   */
   private async findFreshCached(
     finder: () => Promise<AnalysisRecord | null>,
   ): Promise<AnalysisRecord | null> {

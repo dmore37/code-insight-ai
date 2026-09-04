@@ -1,16 +1,10 @@
 import { ValidationAppError } from '../../../../../../shared/errors/app-error';
 
-/**
- * DTO de entrada para analizar un repositorio.
- * Validación manual simple (sin class-validator) para no añadir
- * dependencias extra en el MVP; lanza un ValidationAppError controlado,
- * que el AllExceptionsFilter convertirá en 200 + success:false.
- */
 export class AnalyzeRepositoryRequestDto {
   gitUrl?: string;
   zipFilePath?: string;
   zipS3Key?: string;
-  /** Hash SHA-256 del ZIP calculado en el cliente (para cache de resultados). */
+
   zipHash?: string;
 
   static validate(body: unknown): AnalyzeRepositoryRequestDto {

@@ -80,11 +80,6 @@ export class AnalyzeRepositoryService implements AnalyzeRepositoryUseCase {
     }
   }
 
-  /**
-   * Nombre legible a mostrar en mensajes de error. Para ZIPs subidos a S3,
-   * se usa el nombre original del archivo (no el key completo con el
-   * prefijo `uploads/{owner}/{uuid}__`), que no le dice nada al usuario.
-   */
   private buildDisplayReference(command: AnalyzeRepositoryCommand): string {
     if (command.gitUrl) return command.gitUrl;
     if (command.zipS3Key) return extractZipDisplayName(command.zipS3Key);

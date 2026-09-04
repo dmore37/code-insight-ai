@@ -23,22 +23,6 @@ import {
   DEFAULT_DYNAMODB_ZIPHASH_GSI_NAME,
 } from '../../config/defaults';
 
-/**
- * Adaptador de salida: persiste el historial de análisis en DynamoDB.
- *
- * Esquema de la tabla:
- * - PK: id (string)
- * - Atributos: status, gitUrl, zipFilePath, result (map, opcional),
- *   errorMessage, createdAt, updatedAt, gsiPk (constante "ALL", usada solo
- *   como partition key del GSI de listado cronológico), expiresAt (epoch
- *   segundos, usado por el TTL nativo de DynamoDB para borrado automático).
- * - GSI "byCreatedAt": PK=gsiPk (constante "ALL"), SK=createdAt, para poder
- *   listar los análisis más recientes con una sola Query ordenada.
- * - GSI "byGitUrl": PK=gitUrl, SK=createdAt, para poder buscar el análisis
- *   completado más reciente de una URL (caché de resultados) sin Scan.
- *   Es un índice disperso: los registros sin `gitUrl` (análisis por ZIP)
- *   simplemente no aparecen en él.
- */
 @Injectable()
 export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort {
   private readonly client: DynamoDBDocumentClient;
@@ -85,9 +69,7 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
         TableName: this.tableName,
         Item: {
           id: record.id,
-          // Índice disperso: solo los registros públicos reciben gsiPk,
-          // de modo que el feed general (GSI "byCreatedAt") no incluya
-          // análisis privados (ZIP) de otros usuarios.
+
           gsiPk:
             record.visibility === AnalysisVisibility.Public
               ? DynamoDbAnalysisRepositoryAdapter.GSI_PK_VALUE
@@ -109,12 +91,6 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
     );
   }
 
-  /**
-   * TTL nativo de DynamoDB: epoch en segundos a partir del cual el
-   * registro puede ser borrado automáticamente por AWS (gratis, sin
-   * consumir capacidad de escritura). No afecta el caché por gitUrl,
-   * que se decide en el dominio comparando `createdAt`.
-   */
   private computeExpiresAt(createdAt: string): number {
     const createdMs = new Date(createdAt).getTime();
     const retentionMs =
@@ -122,11 +98,6 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
     return Math.floor((createdMs + retentionMs) / 1000);
   }
 
-  /**
-   * `AnalysisResult` es una instancia de clase con un campo `createdAt`
-   * de tipo `Date`; DynamoDB (marshall) no soporta `Date` nativamente,
-   * así que se convierte a un objeto plano con la fecha en ISO string.
-   */
   private toPlainResult(
     result: AnalysisRecord['result'],
   ): Record<string, unknown> | undefined {
@@ -154,21 +125,13 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
         ExpressionAttributeValues: {
           ':pk': DynamoDbAnalysisRepositoryAdapter.GSI_PK_VALUE,
         },
-        ScanIndexForward: false, // más recientes primero
+        ScanIndexForward: false,
         Limit: limit,
       }),
     );
     return (response.Items ?? []).map((item) => this.toEntity(item));
   }
 
-  /**
-   * Busca el análisis "completed" más reciente para una URL git dada,
-   * usando el GSI "byGitUrl" (Query, no Scan). Se piden hasta 10 items
-   * más recientes de esa URL (pueden incluir "processing"/"failed") y se
-   * filtra en memoria el primero "completed", ya que un FilterExpression
-   * combinado con Limit se aplicaría antes del filtro y podría descartar
-   * el resultado que buscamos.
-   */
   async findLatestCompletedByGitUrl(
     gitUrl: string,
   ): Promise<AnalysisRecord | null> {
@@ -178,7 +141,7 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
         IndexName: this.gitUrlGsiName,
         KeyConditionExpression: 'gitUrl = :u',
         ExpressionAttributeValues: { ':u': gitUrl },
-        ScanIndexForward: false, // más recientes primero
+        ScanIndexForward: false,
         Limit: 10,
       }),
     );
@@ -205,11 +168,6 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
     );
   }
 
-  /**
-   * Igual que `findLatestCompletedByGitUrl` pero indexado por el hash
-   * SHA-256 del ZIP (GSI "byZipHash", disperso: solo los registros con
-   * `zipHash` presente aparecen en él).
-   */
   async findLatestCompletedByZipHash(
     zipHash: string,
   ): Promise<AnalysisRecord | null> {
@@ -229,11 +187,6 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
     return completedItem ? this.toEntity(completedItem) : null;
   }
 
-  /**
-   * Historial combinado: consulta el feed público (GSI "byCreatedAt") y,
-   * si hay `ownerId`, también su historial privado (GSI "byOwner"),
-   * fusiona ambas listas (dedupe por id) y ordena por `createdAt` desc.
-   */
   async findRecentPublicAndByOwner(
     ownerId: string | undefined,
     limit: number,

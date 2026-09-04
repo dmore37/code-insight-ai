@@ -17,21 +17,6 @@ import {
   HISTORY_POLLING_INTERVAL_MS,
 } from '../../core/code-analysis/config/ui.constants';
 
-/**
- * Historial de análisis (leído desde DynamoDB vía `GET /analysis`).
- * Se embebe directamente en la pantalla principal, debajo del formulario
- * de carga de repositorio. Permite ver el resultado completo de un
- * análisis ya finalizado, o refrescar la lista para ver el progreso de
- * los que aún están en estado "processing" (procesados de forma
- * asíncrona vía SQS).
- *
- * El historial depende de la sesión activa (feed público + privados del
- * dueño autenticado), así que se recarga automáticamente cada vez que
- * cambia el estado de login/logout (ver el `effect` en el constructor),
- * sin necesidad de que otro componente lo dispare manualmente. Además,
- * hace polling automático mientras existan registros "processing", para
- * no depender de que el usuario pulse "Refrescar" manualmente.
- */
 @Component({
   selector: 'app-analysis-history',
   standalone: true,
@@ -49,15 +34,13 @@ export class AnalysisHistoryComponent {
   readonly isLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly pageSize = signal(HISTORY_PAGE_SIZE);
-  /** Ids que se están reintentando (para deshabilitar su botón mientras se procesa). */
+
   readonly retryingIds = signal<Set<string>>(new Set());
 
   private pollingHandle: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
-    // Se ejecuta de inmediato (carga inicial) y cada vez que cambia
-    // `currentUser` (login o logout), para que el historial refleje
-    // siempre lo que el usuario actual puede ver.
+
     effect(() => {
       this.auth.currentUser();
       this.load();
@@ -87,7 +70,6 @@ export class AnalysisHistoryComponent {
     }
   }
 
-  /** Trae más registros del historial (paginación simple aumentando el límite). */
   async loadMore(): Promise<void> {
     this.pageSize.update((size) => size + HISTORY_PAGE_SIZE);
     await this.load();
@@ -99,7 +81,6 @@ export class AnalysisHistoryComponent {
     this.router.navigateByUrl('/resultado');
   }
 
-  /** Reenvía el mismo origen (URL o ZIP) de un análisis fallido. */
   async retry(record: AnalysisRecord): Promise<void> {
     if (this.retryingIds().has(record.id)) return;
     this.retryingIds.update((ids) => new Set(ids).add(record.id));
@@ -110,8 +91,7 @@ export class AnalysisHistoryComponent {
         zipHash: record.zipHash,
       });
       if (response.success) {
-        // Inserta el nuevo intento al inicio de la lista sin esperar al
-        // próximo polling/refresh.
+
         this.records.update((current) => [response.data, ...current]);
         this.syncPolling();
       } else {
@@ -132,7 +112,6 @@ export class AnalysisHistoryComponent {
     return this.retryingIds().has(record.id);
   }
 
-  /** Solo se puede reintentar si conocemos un origen reproducible (URL o key en S3). */
   canRetry(record: AnalysisRecord): boolean {
     return Boolean(record.gitUrl || record.zipS3Key);
   }
@@ -143,16 +122,10 @@ export class AnalysisHistoryComponent {
     return record.zipFilePath ?? '—';
   }
 
-  /**
-   * Limpia el key completo de S3 que pueda venir embebido en un mensaje
-   * de error (incluye registros antiguos guardados antes de que el
-   * backend generara mensajes con el nombre legible del ZIP).
-   */
   formatErrorMessage(errorMessage: string | undefined): string {
     return sanitizeZipReferences(errorMessage);
   }
 
-  /** Activa o detiene el polling según si quedan registros "processing". */
   private syncPolling(): void {
     const hasProcessing = this.records().some(
       (record) => record.status === AnalysisStatus.Processing,

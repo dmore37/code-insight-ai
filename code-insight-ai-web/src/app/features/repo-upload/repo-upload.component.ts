@@ -14,7 +14,6 @@ import {
 
 type UploadMode = 'url' | 'zip';
 
-/** Pasos del progreso mostrado mientras `isLoading()` es true. */
 export enum AnalysisStep {
   Uploading = 'uploading',
   Queued = 'queued',
@@ -29,21 +28,6 @@ const STEP_ORDER: AnalysisStep[] = [
   AnalysisStep.Finishing,
 ];
 
-
-/**
- * Sección 1 del reto: carga de repositorio.
- * Soporta dos modos, alternables con un toggle: URL de un repositorio git
- * público (análisis "público", visible para todos en el historial) o
- * archivo ZIP (análisis "privado", visible solo para su dueño), subido
- * directamente a S3 mediante una URL prefirmada (evita el límite de
- * payload de API Gateway/Lambda).
- *
- * El envío usa el flujo asíncrono (POST /analysis/async + SQS): se
- * encola el trabajo y se hace polling de su estado hasta que termina
- * (completed/failed). El historial (DynamoDB) se muestra debajo del
- * formulario, en la misma pantalla, y se refresca automáticamente al
- * terminar cada análisis.
- */
 @Component({
   selector: 'app-repo-upload',
   standalone: true,
@@ -66,10 +50,9 @@ export class RepoUploadComponent {
   zipFile: File | null = null;
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
-  /** Paso actual del progreso, mostrado mientras `isLoading()` es true. */
+
   currentStep = signal<AnalysisStep>(AnalysisStep.Queued);
 
-  /** Pasos a mostrar según el modo (por URL no hay paso de "subiendo"). */
   stepsForMode(): AnalysisStep[] {
     return this.mode() === 'zip'
       ? STEP_ORDER
@@ -89,7 +72,6 @@ export class RepoUploadComponent {
     }
   }
 
-  /** true si `step` ya se completó (está antes del paso actual en el orden). */
   isStepDone(step: AnalysisStep): boolean {
     return STEP_ORDER.indexOf(step) < STEP_ORDER.indexOf(this.currentStep());
   }
@@ -161,10 +143,7 @@ export class RepoUploadComponent {
     this.currentStep.set(AnalysisStep.Uploading);
 
     try {
-      // Hash del contenido ANTES de subir: permite al backend detectar
-      // si ya se analizó este mismo ZIP recientemente (cache hit) sin
-      // depender del nombre de archivo ni de la key en S3 (que siempre
-      // es distinta por incluir un UUID).
+
       const zipHash = await computeFileSha256(this.zipFile);
 
       const urlResponse = await this.analysisHistory.requestZipUploadUrl(
@@ -214,8 +193,6 @@ export class RepoUploadComponent {
       return;
     }
 
-    // Si ya vino resuelto (cache hit: completed/failed de inmediato),
-    // no hace falta refrescar el historial dos veces ni hacer polling.
     const record =
       submitResponse.data.status === AnalysisStatus.Processing
         ? await this.pollAndRefresh(submitResponse.data.id)
@@ -238,12 +215,6 @@ export class RepoUploadComponent {
     }
   }
 
-  /**
-   * Refresca el historial (para que aparezca el registro "processing"
-   * recién creado) y espera (polling) a que pase a un estado final. Si
-   * se agota el tiempo, devuelve el último estado conocido (seguirá
-   * "processing", y el usuario puede revisarlo en el historial).
-   */
   private async pollAndRefresh(id: string) {
     this.historyList?.load();
     this.currentStep.set(AnalysisStep.Processing);
@@ -262,11 +233,10 @@ export class RepoUploadComponent {
         await new Promise((resolve) => setTimeout(resolve, SUBMIT_POLL_INTERVAL_MS));
         continue;
       }
-      // Error de negocio consultando el estado: se detiene el polling.
+
       throw new Error(response.error.message);
     }
 
-    // Se agotó el tiempo: devuelve el último estado consultado (processing).
     const last = await this.analysisHistory.getStatus(id);
     if (last.success) return last.data;
     throw new Error(last.error.message);
