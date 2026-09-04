@@ -1,4 +1,4 @@
-docker tag davidsantiagomoreno-codeai-api:local 267693165925.dkr.ecr.us-east-1.amazonaws.com/davidsantiagomoreno-codeai-api:latest# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1
 
 # ============================================================
 # Stage 1: build (compila TypeScript -> JavaScript con nest build)
