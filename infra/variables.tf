@@ -28,6 +28,20 @@ variable "lambda_memory_mb" {
   default     = 1024
 }
 
+variable "frontend_token_encryption_key" {
+  description = <<-EOT
+    Clave usada por el frontend para ofuscar (AES-GCM) el JWT de Cognito
+    antes de guardarlo en sessionStorage. NO es un secreto real: termina
+    embebida en el bundle JS público del navegador. Solo protege contra
+    lectura casual del token en DevTools, no contra un atacante que
+    inspeccione el código fuente. [FUTURO] reemplazar por un esquema sin
+    exposición del token al navegador (cookies HttpOnly).
+  EOT
+  type        = string
+  default     = "prod-obfuscation-key-change-me-2026"
+  sensitive   = true
+}
+
 variable "docker_image_tag" {
   description = "Tag de la imagen Docker en ECR que usará la Lambda (debe existir antes de aplicar)."
   type        = string
