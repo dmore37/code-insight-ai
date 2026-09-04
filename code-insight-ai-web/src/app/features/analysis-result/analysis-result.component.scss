@@ -148,19 +148,58 @@
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 1rem 1.5rem;
-    text-align: center;
-    min-width: 100px;
+    text-align: left;
+    min-width: 220px;
 
     .count {
       display: block;
       font-size: 1.5rem;
       font-weight: 700;
       color: #1a73e8;
+      text-align: center;
     }
 
     .type {
       font-size: 0.85rem;
       color: #666;
+      display: block;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .component-items {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: 0.8rem;
+
+      li {
+        padding: 0.25rem 0;
+        border-top: 1px solid #f0f0f0;
+        word-break: break-all;
+      }
+
+      .endpoints {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.25rem;
+      }
+
+      .endpoint-badge {
+        font-size: 0.7rem;
+        font-weight: 600;
+        border-radius: 4px;
+        padding: 0.1rem 0.4rem;
+        background: #eee;
+        color: #333;
+
+        &.method-get { background: #e3f2fd; color: #0d47a1; }
+        &.method-post { background: #e8f5e9; color: #1b5e20; }
+        &.method-put { background: #fff3e0; color: #e65100; }
+        &.method-patch { background: #fff3e0; color: #e65100; }
+        &.method-delete { background: #ffebee; color: #b71c1c; }
+      }
     }
   }
 }

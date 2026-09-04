@@ -7,7 +7,7 @@ import {
   StaticAnalysisResult,
   StaticAnalysisEvidence,
 } from '../../../domain/ports/out/static-analyzer.port';
-import { DetectedComponent, DetectedComponentType } from '../../../domain/entities/analysis-result.entity';
+import { DetectedComponent, DetectedComponentType, HttpEndpoint } from '../../../domain/entities/analysis-result.entity';
 
 const IGNORED_DIRS = new Set([
   'node_modules',
@@ -173,17 +173,97 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
     for (const file of files) {
       for (const rule of rules) {
         if (rule.regex.test(file.relativePath)) {
-          components.push({
+          const component: DetectedComponent = {
             type: rule.type,
             name: file.relativePath.split('/').pop() ?? file.relativePath,
             path: file.relativePath,
-          });
+          };
+
+          if (rule.type === DetectedComponentType.Controller) {
+            const content = this.safeReadFile(file.fullPath);
+            const endpoints = this.extractEndpoints(content);
+            if (endpoints.length > 0) component.endpoints = endpoints;
+          }
+
+          components.push(component);
           break;
+        }
+      }
+
+      const content = ['.ts', '.js'].includes(file.ext)
+        ? this.safeReadFile(file.fullPath)
+        : '';
+      if (content) {
+        const consumedApis = this.extractConsumedApis(content);
+        for (const api of consumedApis) {
+          components.push({
+            type: DetectedComponentType.ConsumedApi,
+            name: `${api.method} ${api.path}`,
+            path: file.relativePath,
+          });
         }
       }
     }
 
     return components;
+  }
+
+  private safeReadFile(fullPath: string): string {
+    try {
+      return readFileSync(fullPath, 'utf-8');
+    } catch {
+      return '';
+    }
+  }
+
+  private extractEndpoints(content: string): HttpEndpoint[] {
+    const endpoints: HttpEndpoint[] = [];
+
+    const controllerPrefixMatch =
+      content.match(/@Controller\(\s*['"`]([^'"`]*)['"`]\s*\)/) ??
+      content.match(/@RequestMapping\(\s*['"`]([^'"`]*)['"`]\s*\)/);
+    const prefix = controllerPrefixMatch ? controllerPrefixMatch[1] : '';
+
+    const nestRegex = /@(Get|Post|Put|Delete|Patch)\(\s*(?:['"`]([^'"`]*)['"`])?\s*\)/g;
+    let match: RegExpExecArray | null;
+    while ((match = nestRegex.exec(content))) {
+      const method = match[1].toUpperCase();
+      const subPath = match[2] ?? '';
+      const path = `/${[prefix, subPath].filter(Boolean).join('/')}`.replace(/\/+/g, '/');
+      endpoints.push({ method, path });
+    }
+
+    const springRegex = /@(Get|Post|Put|Delete|Patch)Mapping(?:\(\s*(?:['"`]([^'"`]*)['"`])?\s*\))?/g;
+    while ((match = springRegex.exec(content))) {
+      const method = match[1].toUpperCase();
+      const subPath = match[2] ?? '';
+      const path = `/${[prefix, subPath].filter(Boolean).join('/')}`.replace(/\/+/g, '/');
+      endpoints.push({ method, path });
+    }
+
+    const expressRegex = /(?:router|app)\.(get|post|put|delete|patch)\(\s*['"`]([^'"`]+)['"`]/g;
+    while ((match = expressRegex.exec(content))) {
+      endpoints.push({ method: match[1].toUpperCase(), path: match[2] });
+    }
+
+    return endpoints;
+  }
+
+  private extractConsumedApis(content: string): HttpEndpoint[] {
+    const apis: HttpEndpoint[] = [];
+    const httpClientRegex =
+      /\.(?:http|httpClient)\s*\.\s*(get|post|put|delete|patch)\s*(?:<[^>]*>)?\(\s*[`'"]([^`'"]+)[`'"]/gi;
+    let match: RegExpExecArray | null;
+    while ((match = httpClientRegex.exec(content))) {
+      apis.push({ method: match[1].toUpperCase(), path: match[2] });
+    }
+
+    const fetchRegex = /fetch\(\s*[`'"]([^`'"]+)[`'"]/g;
+    while ((match = fetchRegex.exec(content))) {
+      apis.push({ method: 'GET', path: match[1] });
+    }
+
+    return apis;
   }
 
   private collectEvidences(files: FileEntry[]): StaticAnalysisEvidence[] {

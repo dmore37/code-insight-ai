@@ -23,11 +23,14 @@ resource "aws_sqs_queue" "analysis_jobs" {
   })
 }
 
-# Conecta la cola SQS como trigger de la misma Lambda que atiende la API.
-# El handler (src/handler.ts) detecta si el evento viene de SQS o de API
-# Gateway y actúa en consecuencia.
+# Conecta la cola SQS como trigger de una Lambda dedicada al worker
+# asíncrono. Usa la MISMA imagen Docker que la Lambda de la API
+# (aws_lambda_function.api), pero como función separada para poder
+# aislar timeout, memoria y concurrencia entre el flujo síncrono (HTTP)
+# y el asíncrono (jobs de análisis). El handler.ts sigue detectando el
+# tipo de evento igual, por compatibilidad.
 resource "aws_lambda_event_source_mapping" "analysis_jobs" {
   event_source_arn = aws_sqs_queue.analysis_jobs.arn
-  function_name    = aws_lambda_function.api.arn
+  function_name    = aws_lambda_function.worker.arn
   batch_size       = 1
 }

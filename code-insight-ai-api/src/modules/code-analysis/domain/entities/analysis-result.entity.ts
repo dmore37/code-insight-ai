@@ -25,10 +25,16 @@ export enum DetectedComponentType {
   Other = 'Other',
 }
 
+export interface HttpEndpoint {
+  method: string;
+  path: string;
+}
+
 export interface DetectedComponent {
   type: DetectedComponentType;
   name: string;
   path: string;
+  endpoints?: HttpEndpoint[];
 }
 
 export interface ArchitectureInference {

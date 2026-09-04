@@ -8,14 +8,6 @@ export class MissingRepositorySourceError extends AppError {
   }
 }
 
-export class InvalidGitUrlError extends AppError {
-  readonly code = 'INVALID_GIT_URL';
-
-  constructor(gitUrl: string) {
-    super(`La URL git proporcionada no es válida: "${gitUrl}".`);
-  }
-}
-
 export class RepoFetchError extends AppError {
   readonly code = 'REPO_FETCH_FAILED';
 

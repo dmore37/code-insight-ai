@@ -132,4 +132,103 @@ describe('HeuristicStaticAnalyzerAdapter', () => {
       );
     });
   });
+
+  describe('given a NestJS controller with HTTP method decorators', () => {
+    it('should extract its endpoints combining the controller prefix and each route path', async () => {
+      // Given
+      writeFileSync(
+        join(workDir, 'users.controller.ts'),
+        [
+          "@Controller('users')",
+          'export class UsersController {',
+          "  @Get(':id')",
+          '  findOne() {}',
+          '',
+          '  @Post()',
+          '  create() {}',
+          '}',
+        ].join('\n'),
+      );
+      const source = new RepositorySource(RepositorySourceType.Zip, workDir, 'project.zip');
+
+      // When
+      const result = await adapter.analyze(source);
+
+      // Then
+      const controller = result.components.find((c) => c.type === DetectedComponentType.Controller);
+      expect(controller?.endpoints).toEqual(
+        expect.arrayContaining([
+          { method: 'GET', path: '/users/:id' },
+          { method: 'POST', path: '/users' },
+        ]),
+      );
+    });
+  });
+
+  describe('given a Spring controller with mapping annotations', () => {
+    it('should extract its endpoints using the class-level request mapping as prefix', async () => {
+      // Given
+      writeFileSync(
+        join(workDir, 'UserController.java'),
+        [
+          '@RestController',
+          "@RequestMapping(\"api/users\")",
+          'public class UserController {',
+          '  @GetMapping',
+          '  public List<User> findAll() { return null; }',
+          '',
+          '  @PostMapping("/create")',
+          '  public User create() { return null; }',
+          '}',
+        ].join('\n'),
+      );
+      const source = new RepositorySource(RepositorySourceType.Zip, workDir, 'project.zip');
+
+      // When
+      const result = await adapter.analyze(source);
+
+      // Then
+      const controller = result.components.find((c) => c.type === DetectedComponentType.Controller);
+      expect(controller?.endpoints).toEqual(
+        expect.arrayContaining([
+          { method: 'GET', path: '/api/users' },
+          { method: 'POST', path: '/api/users/create' },
+        ]),
+      );
+    });
+  });
+
+  describe('given an Angular service that calls HttpClient methods', () => {
+    it('should detect the consumed APIs with their HTTP method and path', async () => {
+      // Given
+      writeFileSync(
+        join(workDir, 'user.service.ts'),
+        [
+          '@Injectable()',
+          'export class UserService {',
+          "  list() { return this.http.get('/api/users'); }",
+          "  save(u: any) { return this.http.post('/api/users', u); }",
+          '}',
+        ].join('\n'),
+      );
+      const source = new RepositorySource(RepositorySourceType.Zip, workDir, 'project.zip');
+
+      // When
+      const result = await adapter.analyze(source);
+
+      // Then
+      expect(result.components).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: DetectedComponentType.ConsumedApi,
+            name: 'GET /api/users',
+          }),
+          expect.objectContaining({
+            type: DetectedComponentType.ConsumedApi,
+            name: 'POST /api/users',
+          }),
+        ]),
+      );
+    });
+  });
 });
