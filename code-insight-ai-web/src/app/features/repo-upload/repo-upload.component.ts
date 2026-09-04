@@ -58,13 +58,13 @@ export class RepoUploadComponent {
         return;
       }
 
-      // El registro "processing" ya existe en DynamoDB: refresca el
-      // historial de inmediato para que se vea aparecer.
-      this.historyList?.load();
+      // Si ya vino resuelto (cache hit: completed/failed de inmediato),
+      // no hace falta refrescar el historial dos veces ni hacer polling.
+      const record =
+        submitResponse.data.status === 'processing'
+          ? await this.pollAndRefresh(submitResponse.data.id)
+          : submitResponse.data;
 
-      const record = await this.pollUntilFinished(submitResponse.data.id);
-
-      // Refresca de nuevo con el estado final (completed/failed).
       this.historyList?.load();
 
       if (record.status === 'completed' && record.result) {
@@ -90,10 +90,16 @@ export class RepoUploadComponent {
   }
 
   /**
-   * Espera (polling) a que el registro pase de "processing" a un estado
-   * final. Si se agota el tiempo, devuelve el último estado conocido
-   * (seguirá "processing", y el usuario puede revisarlo en el historial).
+   * Refresca el historial (para que aparezca el registro "processing"
+   * recién creado) y espera (polling) a que pase a un estado final. Si
+   * se agota el tiempo, devuelve el último estado conocido (seguirá
+   * "processing", y el usuario puede revisarlo en el historial).
    */
+  private async pollAndRefresh(id: string) {
+    this.historyList?.load();
+    return this.pollUntilFinished(id);
+  }
+
   private async pollUntilFinished(id: string) {
     const start = Date.now();
 

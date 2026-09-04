@@ -11,11 +11,19 @@ import {
 } from '../../infrastructure/config/tokens';
 import { MissingRepositorySourceError, AnalysisQueueError } from '../errors/code-analysis.errors';
 
+/** Ventana de reutilización del caché por gitUrl: 1 hora. */
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
 /**
  * Caso de uso: encola una solicitud de análisis para procesamiento
  * asíncrono. Crea de inmediato el registro con status "processing" en
  * DynamoDB y publica el trabajo en SQS; el worker asíncrono (consumidor de
  * la cola) se encarga de completar el análisis y actualizar el registro.
+ *
+ * Caché por gitUrl: si ya existe un análisis "completed" reciente (menos
+ * de 1 hora) para la misma URL, se reutiliza tal cual (mismo registro,
+ * sin crear uno nuevo ni volver a llamar a Bedrock/SQS). Esto evita
+ * repetir análisis costosos para URLs consultadas varias veces seguidas.
  */
 @Injectable()
 export class SubmitAnalysisService implements SubmitAnalysisUseCase {
@@ -29,6 +37,11 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
   async execute(command: AnalyzeRepositoryCommand): Promise<AnalysisRecord> {
     if (!command.gitUrl && !command.zipFilePath) {
       throw new MissingRepositorySourceError();
+    }
+
+    if (command.gitUrl) {
+      const cached = await this.findFreshCached(command.gitUrl);
+      if (cached) return cached;
     }
 
     const id = randomUUID();
@@ -51,5 +64,19 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
     }
 
     return record;
+  }
+
+  /**
+   * Solo cuenta como "caché válido" si el análisis "completed" más
+   * reciente para esa URL tiene menos de `CACHE_TTL_MS`; caso contrario
+   * (o si no existe ninguno), devuelve null y se ejecuta el flujo normal.
+   */
+  private async findFreshCached(gitUrl: string): Promise<AnalysisRecord | null> {
+    const cached =
+      await this.analysisRepository.findLatestCompletedByGitUrl(gitUrl);
+    if (!cached) return null;
+
+    const ageMs = Date.now() - new Date(cached.createdAt).getTime();
+    return ageMs < CACHE_TTL_MS ? cached : null;
   }
 }
