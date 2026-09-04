@@ -10,22 +10,10 @@ import {
 } from '../../../domain/ports/out/ai-analyzer.port';
 import { StaticAnalysisResult } from '../../../domain/ports/out/static-analyzer.port';
 import { ArchitecturePattern } from '../../../domain/entities/analysis-result.entity';
+import { DEFAULT_AWS_REGION } from '../../config/defaults';
 
-const VALID_PATTERNS: ArchitecturePattern[] = [
-  'Monolito',
-  'MVC',
-  'Clean Architecture',
-  'Hexagonal',
-  'Microservicios',
-  'N-Capas',
-  'Indeterminado',
-];
+const VALID_PATTERNS: ArchitecturePattern[] = Object.values(ArchitecturePattern);
 
-/**
- * Adaptador de salida: usa Amazon Bedrock (modelo Claude de Anthropic)
- * para generar el análisis funcional, la inferencia de arquitectura y
- * las recomendaciones/riesgos, a partir del resultado del análisis estático.
- */
 @Injectable()
 export class BedrockAiAnalyzerAdapter implements AiAnalyzerPort {
   private readonly logger = new Logger(BedrockAiAnalyzerAdapter.name);
@@ -34,12 +22,37 @@ export class BedrockAiAnalyzerAdapter implements AiAnalyzerPort {
 
   constructor(private readonly config: ConfigService) {
     this.client = new BedrockRuntimeClient({
-      region: this.config.get<string>('AWS_REGION', 'us-east-1'),
+      region: this.config.get<string>('AWS_REGION', DEFAULT_AWS_REGION),
     });
     this.modelId = this.config.get<string>(
       'BEDROCK_MODEL_ID',
-      'anthropic.claude-3-haiku-20240307-v1:0',
+      'amazon.nova-lite-v1:0',
     );
+  }
+
+  private isNovaModel(): boolean {
+    return this.modelId.startsWith('amazon.nova');
+  }
+
+  private buildRequestBody(prompt: string): string {
+    if (this.isNovaModel()) {
+      return JSON.stringify({
+        messages: [{ role: 'user', content: [{ text: prompt }] }],
+        inferenceConfig: { maxTokens: 1500 },
+      });
+    }
+    return JSON.stringify({
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }],
+    });
+  }
+
+  private extractText(parsed: any): string {
+    if (this.isNovaModel()) {
+      return parsed.output?.message?.content?.[0]?.text ?? '{}';
+    }
+    return parsed.content?.[0]?.text ?? '{}';
   }
 
   async analyze(staticResult: StaticAnalysisResult): Promise<AiAnalysisResult> {
@@ -50,17 +63,13 @@ export class BedrockAiAnalyzerAdapter implements AiAnalyzerPort {
         modelId: this.modelId,
         contentType: 'application/json',
         accept: 'application/json',
-        body: JSON.stringify({
-          anthropic_version: 'bedrock-2023-05-31',
-          max_tokens: 1500,
-          messages: [{ role: 'user', content: prompt }],
-        }),
+        body: this.buildRequestBody(prompt),
       });
 
       const response = await this.client.send(command);
       const raw = new TextDecoder().decode(response.body);
       const parsed = JSON.parse(raw);
-      const text: string = parsed.content?.[0]?.text ?? '{}';
+      const text: string = this.extractText(parsed);
 
       return this.parseAiResponse(text);
     } catch (error) {
@@ -113,7 +122,7 @@ ${staticResult.keyFileExcerpts.map((f) => `--- ${f.path} ---\n${f.content}`).joi
       json.architecturePattern,
     )
       ? json.architecturePattern
-      : 'Indeterminado';
+      : ArchitecturePattern.Undetermined;
 
     return {
       functional: {
@@ -134,7 +143,6 @@ ${staticResult.keyFileExcerpts.map((f) => `--- ${f.path} ---\n${f.content}`).joi
     };
   }
 
-  /** Fallback simple si Bedrock no está disponible (permisos, red, etc.) */
   private fallback(staticResult: StaticAnalysisResult): AiAnalysisResult {
     return {
       functional: {
@@ -145,7 +153,7 @@ ${staticResult.keyFileExcerpts.map((f) => `--- ${f.path} ---\n${f.content}`).joi
         ],
       },
       architecture: {
-        pattern: 'Indeterminado',
+        pattern: ArchitecturePattern.Undetermined,
         confidence: 0.3,
         evidences: staticResult.evidences.map((e) => e.description),
       },

@@ -1,0 +1,154 @@
+.analysis-history {
+  max-width: 800px;
+  margin: 3rem auto;
+  padding: 2rem;
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+
+    h1 {
+      margin: 0;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      background: #f1f3f4;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .subtitle {
+    color: #666;
+    margin-bottom: 2rem;
+  }
+
+  .loading,
+  .empty {
+    color: #666;
+  }
+
+  .error {
+    color: #d32f2f;
+    font-weight: 500;
+  }
+
+  .record-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .record {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+
+    &.status-processing {
+      border-left: 4px solid #f9a825;
+    }
+
+    &.status-completed {
+      border-left: 4px solid #2e7d32;
+    }
+
+    &.status-failed {
+      border-left: 4px solid #d32f2f;
+    }
+
+    .record-main {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 0;
+
+      .source {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .date {
+        color: #999;
+        font-size: 0.8rem;
+      }
+    }
+
+    .record-side {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+
+      .badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        background: #f1f3f4;
+      }
+
+      button {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.875rem;
+        background: #1a73e8;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .error-message {
+        max-width: 220px;
+        font-size: 0.75rem;
+        color: #d32f2f;
+      }
+    }
+  }
+
+  .load-more {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+
+    button {
+      padding: 0.5rem 1.25rem;
+      font-size: 0.875rem;
+      background: transparent;
+      color: #1a73e8;
+      border: 1px solid #1a73e8;
+      border-radius: 6px;
+      cursor: pointer;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 2rem;
+    color: #1a73e8;
+    text-decoration: none;
+  }
+}

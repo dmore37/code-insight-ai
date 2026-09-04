@@ -36,4 +36,8 @@ export class AnalysisResultComponent {
     this.analysisState.clear();
     this.router.navigateByUrl('/');
   }
+
+  exportToPdf(): void {
+    window.print();
+  }
 }

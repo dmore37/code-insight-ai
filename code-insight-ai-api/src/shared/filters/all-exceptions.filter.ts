@@ -10,20 +10,6 @@ import { Response } from 'express';
 import { AppError } from '../errors/app-error';
 import { fail } from '../http/api-response';
 
-/**
- * Filtro global de excepciones.
- *
- * Regla de negocio pedida explícitamente: mientras el backend logre
- * responder, el status HTTP debe ser 200. El detalle del error (código,
- * mensaje, detalles) viaja dentro del body con `success: false`.
- *
- * - AppError (y subclases): error de dominio/negocio controlado -> 200 + body.
- * - HttpException de Nest (ej. validación de rutas, 404 de Nest, etc.) -> 200 + body,
- *   reusando el mensaje/código que Nest generó.
- * - Cualquier otro error no controlado -> 200 + body con code UNEXPECTED_ERROR,
- *   sin filtrar detalles internos sensibles (stack trace) al cliente, pero
- *   sí registrados en el log del servidor para diagnóstico.
- */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);

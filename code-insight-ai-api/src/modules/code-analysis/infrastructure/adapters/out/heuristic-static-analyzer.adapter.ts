@@ -7,7 +7,7 @@ import {
   StaticAnalysisResult,
   StaticAnalysisEvidence,
 } from '../../../domain/ports/out/static-analyzer.port';
-import { DetectedComponent } from '../../../domain/entities/analysis-result.entity';
+import { DetectedComponent, DetectedComponentType } from '../../../domain/entities/analysis-result.entity';
 
 const IGNORED_DIRS = new Set([
   'node_modules',
@@ -38,12 +38,6 @@ interface FileEntry {
   ext: string;
 }
 
-/**
- * Adaptador de salida: analiza estáticamente el proyecto mediante
- * heurísticas (sin IA): conteo de archivos, detección de framework
- * por archivos de manifiesto, y detección de componentes por
- * convención de carpetas/decoradores.
- */
 @Injectable()
 export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
   async analyze(source: RepositorySource): Promise<StaticAnalysisResult> {
@@ -115,7 +109,7 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
         const content = JSON.parse(readFileSync(pkgJson.fullPath, 'utf-8'));
         if (content.name) return content.name;
       } catch {
-        /* ignore parse errors */
+
       }
     }
     const parts = source.originalReference.split(/[/\\]/).filter(Boolean);
@@ -169,11 +163,11 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
     const components: DetectedComponent[] = [];
 
     const rules: { regex: RegExp; type: DetectedComponent['type'] }[] = [
-      { regex: /controller\.ts$|controller\.js$|Controller\.java$/i, type: 'Controller' },
-      { regex: /service\.ts$|service\.js$|Service\.java$/i, type: 'Service' },
-      { regex: /repository\.ts$|repository\.js$|Repository\.java$/i, type: 'Repository' },
-      { regex: /(entity|model)\.ts$|Entity\.java$|Model\.java$/i, type: 'Model' },
-      { regex: /\.component\.ts$/i, type: 'AngularComponent' },
+      { regex: /controller\.ts$|controller\.js$|Controller\.java$/i, type: DetectedComponentType.Controller },
+      { regex: /service\.ts$|service\.js$|Service\.java$/i, type: DetectedComponentType.Service },
+      { regex: /repository\.ts$|repository\.js$|Repository\.java$/i, type: DetectedComponentType.Repository },
+      { regex: /(entity|model)\.ts$|Entity\.java$|Model\.java$/i, type: DetectedComponentType.Model },
+      { regex: /\.component\.ts$/i, type: DetectedComponentType.AngularComponent },
     ];
 
     for (const file of files) {
@@ -242,7 +236,7 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
           const content = readFileSync(file.fullPath, 'utf-8').slice(0, 2000);
           result.push({ path: file.relativePath, content });
         } catch {
-          /* ignore */
+
         }
       }
     }

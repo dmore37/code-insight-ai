@@ -20,6 +20,7 @@ import {
   AiAnalysisError,
 } from '../errors/code-analysis.errors';
 import { AppError } from '../../../../shared/errors/app-error';
+import { extractZipDisplayName } from '../utils/zip-display-name.util';
 
 @Injectable()
 export class AnalyzeRepositoryService implements AnalyzeRepositoryUseCase {
@@ -31,11 +32,11 @@ export class AnalyzeRepositoryService implements AnalyzeRepositoryUseCase {
   ) {}
 
   async execute(command: AnalyzeRepositoryCommand): Promise<AnalysisResult> {
-    if (!command.gitUrl && !command.zipFilePath) {
+    if (!command.gitUrl && !command.zipFilePath && !command.zipS3Key) {
       throw new MissingRepositorySourceError();
     }
 
-    const reference = command.gitUrl ?? command.zipFilePath!;
+    const reference = this.buildDisplayReference(command);
     const source = await this.fetchSource(command);
 
     try {
@@ -68,13 +69,20 @@ export class AnalyzeRepositoryService implements AnalyzeRepositoryUseCase {
   }
 
   private async fetchSource(command: AnalyzeRepositoryCommand) {
-    const reference = command.gitUrl ?? command.zipFilePath!;
+    const reference = this.buildDisplayReference(command);
     try {
-      return command.gitUrl
-        ? await this.repoFetcher.fetchFromGit(command.gitUrl)
-        : await this.repoFetcher.fetchFromZip(command.zipFilePath!);
+      if (command.gitUrl) return await this.repoFetcher.fetchFromGit(command.gitUrl);
+      if (command.zipS3Key)
+        return await this.repoFetcher.fetchFromS3Zip(command.zipS3Key);
+      return await this.repoFetcher.fetchFromZip(command.zipFilePath!);
     } catch (cause) {
       throw new RepoFetchError(reference, cause);
     }
+  }
+
+  private buildDisplayReference(command: AnalyzeRepositoryCommand): string {
+    if (command.gitUrl) return command.gitUrl;
+    if (command.zipS3Key) return extractZipDisplayName(command.zipS3Key);
+    return command.zipFilePath!;
   }
 }

@@ -5,17 +5,60 @@
     componentes clave y descripción funcional.
   </p>
 
-  <form (ngSubmit)="onSubmit()" class="upload-form">
-    <label for="gitUrl">URL de repositorio Git público</label>
-    <input
-      id="gitUrl"
-      name="gitUrl"
-      type="url"
-      placeholder="https://github.com/usuario/proyecto-demo"
-      [(ngModel)]="gitUrl"
+  <div class="mode-toggle" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      [class.active]="mode() === 'url'"
       [disabled]="isLoading()"
-      required
-    />
+      (click)="setMode('url')"
+    >
+      URL de Git
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [class.active]="mode() === 'zip'"
+      [disabled]="isLoading()"
+      (click)="setMode('zip')"
+    >
+      Archivo ZIP
+    </button>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" class="upload-form">
+    @if (mode() === 'url') {
+      <label for="gitUrl">URL de repositorio Git público</label>
+      <input
+        id="gitUrl"
+        name="gitUrl"
+        type="url"
+        placeholder="https://github.com/usuario/proyecto-demo"
+        [(ngModel)]="gitUrl"
+        [disabled]="isLoading()"
+        required
+      />
+    } @else {
+      <label for="zipFile">Archivo ZIP del repositorio</label>
+      <input
+        id="zipFile"
+        name="zipFile"
+        type="file"
+        accept=".zip"
+        [disabled]="isLoading()"
+        (change)="onZipFileSelected($event)"
+        required
+      />
+      <p class="hint">
+        Este análisis será privado: solo aparecerá en tu propio historial.
+      </p>
+      @if (!currentUser()) {
+        <p class="error">
+          Necesitas <a routerLink="/login">iniciar sesión</a> para analizar
+          por ZIP.
+        </p>
+      }
+    }
 
     <button type="submit" [disabled]="isLoading()">
       @if (isLoading()) {
@@ -25,12 +68,23 @@
       }
     </button>
 
+    @if (isLoading()) {
+      <ol class="progress-steps">
+        @for (step of stepsForMode(); track step) {
+          <li
+            [class.done]="isStepDone(step)"
+            [class.active]="isStepActive(step)"
+          >
+            {{ stepLabel(step) }}
+          </li>
+        }
+      </ol>
+    }
+
     @if (errorMessage()) {
       <p class="error">{{ errorMessage() }}</p>
     }
   </form>
-
-  <p class="hint">
-    Próximamente: carga de archivo ZIP como alternativa a la URL git.
-  </p>
 </section>
+
+<app-analysis-history #historyList />

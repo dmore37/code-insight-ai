@@ -1,0 +1,9 @@
+
+
+export const HISTORY_PAGE_SIZE = 20;
+
+export const HISTORY_POLLING_INTERVAL_MS = 5000;
+
+export const SUBMIT_POLL_INTERVAL_MS = 1500;
+
+export const SUBMIT_POLL_TIMEOUT_MS = 60_000;

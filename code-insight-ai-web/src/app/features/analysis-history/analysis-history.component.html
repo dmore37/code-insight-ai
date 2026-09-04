@@ -1,0 +1,64 @@
+<section class="analysis-history">
+  <div class="header">
+    <h1>Historial de análisis</h1>
+  </div>
+  <p class="subtitle">
+    Análisis recientes, procesados de forma asíncrona y almacenados en
+    DynamoDB.
+  </p>
+
+  @if (isLoading()) {
+    <p class="loading">Cargando historial…</p>
+  }
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  @if (!isLoading() && records().length === 0 && !errorMessage()) {
+    <p class="empty">Aún no hay análisis en el historial.</p>
+  }
+
+  @if (records().length > 0) {
+    <ul class="record-list">
+      @for (record of records(); track record.id) {
+        <li class="record" [class]="'status-' + record.status">
+          <div class="record-main">
+            <span class="source">{{ sourceLabel(record) }}</span>
+            <span class="date">{{ record.createdAt | date: 'medium' }}</span>
+          </div>
+          <div class="record-side">
+            <span class="badge">{{ statusLabel(record.status) }}</span>
+            @if (record.status === 'completed') {
+              <button type="button" (click)="viewResult(record)">
+                Ver resultado
+              </button>
+            }
+            @if (record.status === 'failed') {
+              <span class="error-message">{{ formatErrorMessage(record.errorMessage) }}</span>
+              @if (canRetry(record)) {
+                <button
+                  type="button"
+                  (click)="retry(record)"
+                  [disabled]="isRetrying(record)"
+                >
+                  @if (isRetrying(record)) {
+                    Reintentando…
+                  } @else {
+                    ↻ Reintentar
+                  }
+                </button>
+              }
+            }
+          </div>
+        </li>
+      }
+    </ul>
+    <div class="load-more">
+      <button type="button" (click)="loadMore()" [disabled]="isLoading()">
+        Cargar más
+      </button>
+    </div>
+  }
+
+</section>

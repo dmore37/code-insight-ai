@@ -1,11 +1,12 @@
-export type ArchitecturePattern =
-  | 'Monolito'
-  | 'MVC'
-  | 'Clean Architecture'
-  | 'Hexagonal'
-  | 'Microservicios'
-  | 'N-Capas'
-  | 'Indeterminado';
+export enum ArchitecturePattern {
+  Monolith = 'Monolito',
+  Mvc = 'MVC',
+  CleanArchitecture = 'Clean Architecture',
+  Hexagonal = 'Hexagonal',
+  Microservices = 'Microservicios',
+  NLayers = 'N-Capas',
+  Undetermined = 'Indeterminado',
+}
 
 export interface GeneralInfo {
   projectName: string;
@@ -14,22 +15,25 @@ export interface GeneralInfo {
   approxFileCount: number;
 }
 
+export enum DetectedComponentType {
+  Controller = 'Controller',
+  Service = 'Service',
+  Repository = 'Repository',
+  Model = 'Model',
+  AngularComponent = 'AngularComponent',
+  ConsumedApi = 'ConsumedApi',
+  Other = 'Other',
+}
+
 export interface DetectedComponent {
-  type:
-    | 'Controller'
-    | 'Service'
-    | 'Repository'
-    | 'Model'
-    | 'AngularComponent'
-    | 'ConsumedApi'
-    | 'Other';
+  type: DetectedComponentType;
   name: string;
   path: string;
 }
 
 export interface ArchitectureInference {
   pattern: ArchitecturePattern;
-  confidence: number; // 0-1
+  confidence: number;
   evidences: string[];
 }
 
@@ -43,9 +47,6 @@ export interface Findings {
   risks: string[];
 }
 
-/**
- * Entidad raíz del dominio: resultado completo del análisis de un repositorio.
- */
 export class AnalysisResult {
   constructor(
     public readonly id: string,

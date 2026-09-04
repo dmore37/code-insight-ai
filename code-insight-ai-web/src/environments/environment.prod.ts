@@ -1,6 +1,9 @@
 export const environment = {
   production: true,
-  // Se actualizará manualmente con la URL real de API Gateway/Lambda
-  // cuando se despliegue en AWS.
-  apiBaseUrl: 'https://TODO-reemplazar-con-url-api-gateway.amazonaws.com',
+  apiBaseUrl: 'https://8hqvkd77oa.execute-api.us-east-1.amazonaws.com',
+  cognito: {
+    region: 'us-east-1',
+    userPoolId: 'us-east-1_5COCOPkNr',
+    clientId: '6lcme55pmnjic28q6qnodjdvio',
+  },
 };

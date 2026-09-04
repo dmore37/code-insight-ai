@@ -1,7 +1,15 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src"
+    "rootDir": "./src",
+    // El cache incremental de TypeScript debe vivir DENTRO de `dist/`.
+    // Si vive fuera (como en la config por defecto), queda desincronizado
+    // cada vez que `nest build` borra `dist/` (deleteOutDir: true en
+    // nest-cli.json): tsc cree que ya emitió los archivos (según el
+    // cache) y no los vuelve a escribir, dejando `dist/` vacío o
+    // incompleto sin ningún error visible. Al vivir dentro de `dist/`,
+    // el cache se borra junto con la carpeta y siempre queda consistente.
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
   },
   "include": ["src"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]

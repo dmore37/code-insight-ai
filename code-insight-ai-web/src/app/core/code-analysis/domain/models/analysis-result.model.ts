@@ -1,8 +1,4 @@
-/**
- * Modelos de dominio del frontend, en espejo con las entidades del backend
- * (AnalysisResult en NestJS). Se mantienen como interfaces puras de TS,
- * sin ninguna dependencia de Angular ni HTTP.
- */
+
 
 export type ArchitecturePattern =
   | 'Monolito'
