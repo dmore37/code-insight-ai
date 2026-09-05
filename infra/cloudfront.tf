@@ -8,6 +8,7 @@ resource "aws_cloudfront_distribution" "web" {
   count = var.enable_cloudfront ? 1 : 0
 
   enabled             = true
+  is_ipv6_enabled     = true
   default_root_object = "index.html"
   comment             = "CDN para frontend Angular - ${var.project_name}"
 
@@ -28,6 +29,7 @@ resource "aws_cloudfront_distribution" "web" {
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
+    compress               = true
 
     # Cache policy administrada por AWS: "CachingOptimized"
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
@@ -37,6 +39,15 @@ resource "aws_cloudfront_distribution" "web" {
     geo_restriction {
       restriction_type = "none"
     }
+  }
+
+  # Esta distribución fue creada manualmente en la consola de AWS y luego
+  # importada a Terraform (ver `terraform import`). AWS le asocia
+  # automáticamente un WAF Web ACL gratuito ("CreatedByCloudFront-...") y
+  # un tag "Name" al crearla desde la consola; ambos se ignoran aquí para
+  # que Terraform no intente eliminarlos en cada apply.
+  lifecycle {
+    ignore_changes = [web_acl_id, tags["Name"], tags_all["Name"]]
   }
 
   viewer_certificate {

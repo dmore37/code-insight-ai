@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthPort } from '../../core/auth/application/ports/auth.port';
@@ -38,18 +38,18 @@ export class LoginComponent {
   passwordTouched = signal(false);
   newPasswordTouched = signal(false);
 
-  readonly passwordValid = computed(() => PASSWORD_REGEX.test(this.password));
-  readonly newPasswordValid = computed(() =>
-    PASSWORD_REGEX.test(this.newPassword),
-  );
+  readonly passwordValid = signal(false);
+  readonly newPasswordValid = signal(false);
   readonly passwordHint = AuthUiMessage.PasswordRequirements;
 
   onPasswordInput(): void {
     this.passwordTouched.set(true);
+    this.passwordValid.set(PASSWORD_REGEX.test(this.password));
   }
 
   onNewPasswordInput(): void {
     this.newPasswordTouched.set(true);
+    this.newPasswordValid.set(PASSWORD_REGEX.test(this.newPassword));
   }
 
   isLoading = signal(false);
@@ -69,8 +69,7 @@ export class LoginComponent {
     this.errorMessage.set(null);
     this.infoMessage.set(null);
 
-    const requiresPassword =
-      this.mode() !== 'confirm' && this.mode() !== 'forgot';
+    const requiresPassword = this.mode() === 'login' || this.mode() === 'signup';
     if (!this.email.trim() || (requiresPassword && !this.password)) {
       this.errorMessage.set(AuthUiMessage.FillAllFields);
       return;
