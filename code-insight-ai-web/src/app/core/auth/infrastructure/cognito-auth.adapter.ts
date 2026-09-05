@@ -12,8 +12,6 @@ import { environment } from '../../../../environments/environment';
 import { AuthPort, AuthResult } from '../domain/ports/auth.port';
 import { AuthUser } from '../domain/models/auth-user.model';
 
-const ID_TOKEN_STORAGE_KEY = 'codeInsightAi.idToken';
-
 @Injectable({ providedIn: 'root' })
 export class CognitoAuthAdapter implements AuthPort {
   private readonly client = new CognitoIdentityProviderClient({
@@ -21,7 +19,9 @@ export class CognitoAuthAdapter implements AuthPort {
   });
   private readonly clientId = environment.cognito.clientId;
 
-  private readonly userSignal = signal<AuthUser | null>(this.restoreUser());
+  private cachedIdToken: string | null = null;
+
+  private readonly userSignal = signal<AuthUser | null>(null);
   readonly currentUser = this.userSignal.asReadonly();
 
   async signUp(email: string, password: string): Promise<AuthResult> {
@@ -70,7 +70,7 @@ export class CognitoAuthAdapter implements AuthPort {
         return { success: false, message: 'No se recibió token de sesión.' };
       }
 
-      localStorage.setItem(ID_TOKEN_STORAGE_KEY, idToken);
+      this.cachedIdToken = idToken;
       this.userSignal.set(this.decodeUser(idToken));
       return { success: true };
     } catch (err) {
@@ -79,7 +79,7 @@ export class CognitoAuthAdapter implements AuthPort {
   }
 
   logout(): void {
-    localStorage.removeItem(ID_TOKEN_STORAGE_KEY);
+    this.cachedIdToken = null;
     this.userSignal.set(null);
   }
 
@@ -118,19 +118,7 @@ export class CognitoAuthAdapter implements AuthPort {
   }
 
   getIdToken(): string | null {
-    return localStorage.getItem(ID_TOKEN_STORAGE_KEY);
-  }
-
-  private restoreUser(): AuthUser | null {
-    const token = localStorage.getItem(ID_TOKEN_STORAGE_KEY);
-    if (!token) return null;
-    const user = this.decodeUser(token);
-
-    if (user && this.isExpired(token)) {
-      localStorage.removeItem(ID_TOKEN_STORAGE_KEY);
-      return null;
-    }
-    return user;
+    return this.cachedIdToken;
   }
 
   private decodeUser(idToken: string): AuthUser | null {
@@ -139,15 +127,6 @@ export class CognitoAuthAdapter implements AuthPort {
       return { sub: payload.sub, email: payload.email };
     } catch {
       return null;
-    }
-  }
-
-  private isExpired(idToken: string): boolean {
-    try {
-      const payload = JSON.parse(atob(idToken.split('.')[1]));
-      return Date.now() >= payload.exp * 1000;
-    } catch {
-      return true;
     }
   }
 

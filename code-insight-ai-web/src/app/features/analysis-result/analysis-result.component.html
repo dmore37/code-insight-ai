@@ -56,6 +56,22 @@
             <div class="component-card">
               <span class="count">{{ group.count }}</span>
               <span class="type">{{ group.type }}</span>
+              <ul class="component-items">
+                @for (item of group.items; track item.path + item.name) {
+                  <li>
+                    {{ item.name }}
+                    @if (item.endpoints && item.endpoints.length > 0) {
+                      <span class="endpoints">
+                        @for (ep of item.endpoints; track ep.method + ep.path) {
+                          <span class="endpoint-badge" [class]="'method-' + ep.method.toLowerCase()">
+                            {{ ep.method }} {{ ep.path }}
+                          </span>
+                        }
+                      </span>
+                    }
+                  </li>
+                }
+              </ul>
             </div>
           }
         </div>

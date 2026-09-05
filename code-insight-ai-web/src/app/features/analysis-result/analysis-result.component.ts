@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AnalysisStateService } from './analysis-state.service';
+import { DetectedComponent } from '../../core/code-analysis/domain/models/analysis-result.model';
 
 @Component({
   selector: 'app-analysis-result',
@@ -22,13 +23,16 @@ export class AnalysisResultComponent {
   readonly componentsByType = computed(() => {
     const r = this.result();
     if (!r) return [];
-    const groups = new Map<string, number>();
+    const groups = new Map<string, DetectedComponent[]>();
     for (const c of r.components) {
-      groups.set(c.type, (groups.get(c.type) ?? 0) + 1);
+      const list = groups.get(c.type) ?? [];
+      list.push(c);
+      groups.set(c.type, list);
     }
-    return Array.from(groups.entries()).map(([type, count]) => ({
+    return Array.from(groups.entries()).map(([type, items]) => ({
       type,
-      count,
+      count: items.length,
+      items,
     }));
   });
 

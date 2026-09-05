@@ -98,6 +98,9 @@ Información general:
 - Framework principal: ${staticResult.general.mainFramework}
 - Cantidad de archivos: ${staticResult.general.approxFileCount}
 
+Componentes detectados por convención de nombres (usa esto para tu análisis, no inventes otros):
+${staticResult.components.map((c) => `- [${c.type}] ${c.path}${c.endpoints?.length ? ' -> ' + c.endpoints.map((e) => `${e.method} ${e.path}`).join(', ') : ''}`).join('\n') || 'Ninguno'}
+
 Evidencias detectadas por análisis estático:
 ${staticResult.evidences.map((e) => `- ${e.description} (${e.filePath})`).join('\n') || 'Ninguna'}
 

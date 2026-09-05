@@ -39,7 +39,8 @@ resource "null_resource" "docker_build_push" {
 # suba una imagen nueva, Terraform no detecta cambios en `image_uri` (el
 # string no cambia) y por lo tanto NO actualiza el código de la Lambda por
 # sí solo. Este recurso fuerza esa actualización explícitamente después de
-# cada push, apuntando la Lambda al digest recién publicado.
+# cada push, apuntando AMBAS Lambdas (api y worker, que comparten la misma
+# imagen) al digest recién publicado.
 resource "null_resource" "lambda_update_code" {
   triggers = {
     docker_build_push_id = null_resource.docker_build_push.id
@@ -56,8 +57,16 @@ resource "null_resource" "lambda_update_code" {
       aws lambda wait function-updated \
         --function-name ${aws_lambda_function.api.function_name} \
         --region ${var.aws_region}
+      aws lambda update-function-code \
+        --function-name ${aws_lambda_function.worker.function_name} \
+        --image-uri ${local.ecr_image_uri} \
+        --region ${var.aws_region} \
+        --no-cli-pager
+      aws lambda wait function-updated \
+        --function-name ${aws_lambda_function.worker.function_name} \
+        --region ${var.aws_region}
     EOT
   }
 
-  depends_on = [null_resource.docker_build_push, aws_lambda_function.api]
+  depends_on = [null_resource.docker_build_push, aws_lambda_function.api, aws_lambda_function.worker]
 }
