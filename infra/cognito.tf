@@ -50,4 +50,14 @@ resource "aws_cognito_user_pool_client" "web" {
     id_token      = "minutes"
     refresh_token = "days"
   }
+
+  # Al importar este recurso desde un cliente ya existente, el provider a
+  # veces no captura correctamente el atributo `generate_secret` (queda
+  # como null en el state), lo que dispararía un reemplazo destructivo
+  # innecesario (generate_secret es ForceNew). Lo ignoramos explícitamente
+  # para evitar recrear el client y así invalidar el Client ID en uso por
+  # el frontend ya desplegado.
+  lifecycle {
+    ignore_changes = [generate_secret]
+  }
 }
