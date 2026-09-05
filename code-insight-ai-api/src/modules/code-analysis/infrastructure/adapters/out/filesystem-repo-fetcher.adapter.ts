@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import simpleGit from 'simple-git';
 import AdmZip from 'adm-zip';
 import { S3Client, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
-import { RepoFetcherPort } from '../../../domain/ports/out/repo-fetcher.port';
+import { RepoFetcherPort } from '../../../application/ports/out/repo-fetcher.port';
 import {
   RepositorySource,
   RepositorySourceType,

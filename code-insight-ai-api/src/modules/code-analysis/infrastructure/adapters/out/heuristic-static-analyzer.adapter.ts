@@ -6,7 +6,7 @@ import {
   StaticAnalyzerPort,
   StaticAnalysisResult,
   StaticAnalysisEvidence,
-} from '../../../domain/ports/out/static-analyzer.port';
+} from '../../../application/ports/out/static-analyzer.port';
 import { DetectedComponent, DetectedComponentType, HttpEndpoint } from '../../../domain/entities/analysis-result.entity';
 
 const IGNORED_DIRS = new Set([
@@ -329,14 +329,7 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
     return evidences;
   }
 
-  /**
-   * Detecta patrones arquitectónicos a partir de la estructura de carpetas
-   * (independiente del contenido de los archivos). Esto es clave para
-   * distinguir Hexagonal/Clean de MVC, ya que ambos pueden usar
-   * @Controller/@Injectable pero difieren radicalmente en cómo organizan
-   * las carpetas (ports/adapters vs controllers/models/views).
-   */
-  private collectFolderStructureEvidences(files: FileEntry[]): StaticAnalysisEvidence[] {
+    private collectFolderStructureEvidences(files: FileEntry[]): StaticAnalysisEvidence[] {
     const evidences: StaticAnalysisEvidence[] = [];
     const paths = files.map((f) => f.relativePath.replace(/\\/g, '/'));
     const hasPathMatching = (regex: RegExp) => paths.some((p) => regex.test(p));
@@ -349,7 +342,7 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
     if (hasPorts && hasAdapters) {
       evidences.push({
         description:
-          'Estructura de carpetas ports/adapters (domain/ports/in|out + infrastructure/adapters/in|out): fuerte indicio de Arquitectura Hexagonal (Puertos y Adaptadores), NO MVC clásico.',
+          'Estructura de carpetas ports/adapters (application/ports/in|out + infrastructure/adapters/in|out): fuerte indicio de Arquitectura Hexagonal (Puertos y Adaptadores), NO MVC clásico.',
         filePath: paths.find((p) => /\/(domain\/)?ports\//i.test(p)) ?? '',
       });
     } else if (hasDomainInfraSplit) {

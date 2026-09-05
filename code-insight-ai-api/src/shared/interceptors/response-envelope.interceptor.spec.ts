@@ -19,14 +19,11 @@ describe('ResponseEnvelopeInterceptor', () => {
 
   describe('given a handler that resolves with a plain payload', () => {
     it('should force HTTP 200 and wrap the payload as a success envelope', async () => {
-      // Given
-      const handler: CallHandler = { handle: () => of({ id: '123' }) };
+            const handler: CallHandler = { handle: () => of({ id: '123' }) };
 
-      // When
-      const result = await firstValueFrom(interceptor.intercept(context, handler));
+            const result = await firstValueFrom(interceptor.intercept(context, handler));
 
-      // Then
-      expect(statusMock).toHaveBeenCalledWith(HttpStatus.OK);
+            expect(statusMock).toHaveBeenCalledWith(HttpStatus.OK);
       expect(result).toEqual({ success: true, data: { id: '123' } });
     });
   });

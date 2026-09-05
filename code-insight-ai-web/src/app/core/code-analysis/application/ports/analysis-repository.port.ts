@@ -1,5 +1,5 @@
-import { ApiResponse } from '../models/api-response.model';
-import { AnalysisResult } from '../models/analysis-result.model';
+import { ApiResponse } from '../../domain/models/api-response.model';
+import { AnalysisResult } from '../../domain/models/analysis-result.model';
 
 export interface AnalyzeRepositoryCommand {
   gitUrl?: string;

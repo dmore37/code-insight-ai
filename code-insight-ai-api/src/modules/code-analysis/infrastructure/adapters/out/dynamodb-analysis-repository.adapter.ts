@@ -8,7 +8,7 @@ import {
   QueryCommand,
   BatchGetCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { AnalysisRepositoryPort, AnalysisHistoryPage } from '../../../domain/ports/out/analysis-repository.port';
+import { AnalysisRepositoryPort, AnalysisHistoryPage } from '../../../application/ports/out/analysis-repository.port';
 import {
   AnalysisRecord,
   AnalysisStatus,
@@ -220,28 +220,7 @@ export class DynamoDbAnalysisRepositoryAdapter implements AnalysisRepositoryPort
       .slice(0, limit);
   }
 
-  // ============================================================
-  // Paginación con cursor de `findRecentPublicAndByOwner`.
-  //
-  // El feed que se muestra es la fusión (merge) de dos queries
-  // independientes de DynamoDB, ordenadas de forma global por
-  // `createdAt` desc. Un `LastEvaluatedKey` de una sola query no
-  // alcanza para paginar ese resultado combinado (el "próximo" ítem
-  // global puede venir de cualquiera de las dos fuentes). La solución es
-  // un "k-way merge" clásico: se mantiene, por cada fuente, un pequeño
-  // buffer de look-ahead con al menos `pageSize` ítems (mientras la
-  // fuente no esté agotada). Ese estado (LastEvaluatedKey + buffer +
-  // flag "agotada" de cada fuente) se serializa como JSON y se codifica
-  // en base64 para viajar de ida y vuelta en el `cursor` opaco que ve el
-  // cliente, sin necesidad de guardar nada en el servidor entre
-  // requests (mantiene el endpoint stateless).
-  //
-  // El buffer solo guarda {id, createdAt} (no el registro completo) para
-  // no inflar el tamaño del cursor con el contenido de `result`; el
-  // contenido completo de los ítems de la página se resuelve al final
-  // con un único BatchGetItem por los ids que realmente se muestran.
-  // ============================================================
-
+                                          
   private static readonly CURSOR_VERSION = 1;
 
   async findRecentPublicAndByOwnerPage(

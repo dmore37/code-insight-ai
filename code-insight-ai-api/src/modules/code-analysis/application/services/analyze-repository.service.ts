@@ -7,7 +7,7 @@ import {
 import { RepoFetcherPort } from '../ports/out/repo-fetcher.port';
 import { StaticAnalyzerPort } from '../ports/out/static-analyzer.port';
 import { AiAnalyzerPort } from '../ports/out/ai-analyzer.port';
-import { AnalysisResult } from '../entities/analysis-result.entity';
+import { AnalysisResult } from '../../domain/entities/analysis-result.entity';
 import {
   REPO_FETCHER_PORT,
   STATIC_ANALYZER_PORT,
@@ -18,9 +18,9 @@ import {
   RepoFetchError,
   StaticAnalysisError,
   AiAnalysisError,
-} from '../errors/code-analysis.errors';
+} from '../../domain/errors/code-analysis.errors';
 import { AppError } from '../../../../shared/errors/app-error';
-import { extractZipDisplayName } from '../utils/zip-display-name.util';
+import { extractZipDisplayName } from '../../domain/utils/zip-display-name.util';
 
 @Injectable()
 export class AnalyzeRepositoryService implements AnalyzeRepositoryUseCase {

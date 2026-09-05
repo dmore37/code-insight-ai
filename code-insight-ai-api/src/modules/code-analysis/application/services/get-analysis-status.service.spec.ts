@@ -1,7 +1,7 @@
 import { GetAnalysisStatusService } from './get-analysis-status.service';
 import { AnalysisRepositoryPort } from '../ports/out/analysis-repository.port';
-import { AnalysisRecord, AnalysisStatus } from '../entities/analysis-record.entity';
-import { AnalysisNotFoundError } from '../errors/code-analysis.errors';
+import { AnalysisRecord, AnalysisStatus } from '../../domain/entities/analysis-record.entity';
+import { AnalysisNotFoundError } from '../../domain/errors/code-analysis.errors';
 
 describe('GetAnalysisStatusService', () => {
   let analysisRepository: jest.Mocked<AnalysisRepositoryPort>;
@@ -15,14 +15,14 @@ describe('GetAnalysisStatusService', () => {
       findLatestCompletedByGitUrl: jest.fn(),
       findLatestCompletedByZipHash: jest.fn(),
       findRecentPublicAndByOwner: jest.fn(),
+      findRecentPublicAndByOwnerPage: jest.fn(),
     };
     service = new GetAnalysisStatusService(analysisRepository);
   });
 
   describe('when a record exists for the given id', () => {
     it('should return it as-is', async () => {
-      // Given: a record stored under id "abc-123"
-      const record = new AnalysisRecord(
+            const record = new AnalysisRecord(
         'abc-123',
         AnalysisStatus.Processing,
         new Date().toISOString(),
@@ -30,22 +30,18 @@ describe('GetAnalysisStatusService', () => {
       );
       analysisRepository.findById.mockResolvedValue(record);
 
-      // When
-      const result = await service.execute('abc-123');
+            const result = await service.execute('abc-123');
 
-      // Then
-      expect(result).toBe(record);
+            expect(result).toBe(record);
       expect(analysisRepository.findById).toHaveBeenCalledWith('abc-123');
     });
   });
 
   describe('when no record exists for the given id', () => {
     it('should throw AnalysisNotFoundError', async () => {
-      // Given: the repository has nothing for "missing-id"
-      analysisRepository.findById.mockResolvedValue(null);
+            analysisRepository.findById.mockResolvedValue(null);
 
-      // When / Then
-      await expect(service.execute('missing-id')).rejects.toBeInstanceOf(
+            await expect(service.execute('missing-id')).rejects.toBeInstanceOf(
         AnalysisNotFoundError,
       );
     });

@@ -1,6 +1,6 @@
 import { Component, HostListener, inject } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
-import { AuthPort } from './core/auth/domain/ports/auth.port';
+import { AuthPort } from './core/auth/application/ports/auth.port';
 
 @Component({
   selector: 'app-root',

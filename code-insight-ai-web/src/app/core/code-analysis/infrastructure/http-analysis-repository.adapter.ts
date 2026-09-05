@@ -7,7 +7,7 @@ import { AnalysisResult } from '../domain/models/analysis-result.model';
 import {
   AnalysisRepositoryPort,
   AnalyzeRepositoryCommand,
-} from '../domain/ports/analysis-repository.port';
+} from '../application/ports/analysis-repository.port';
 
 @Injectable({ providedIn: 'root' })
 export class HttpAnalysisRepositoryAdapter implements AnalysisRepositoryPort {

@@ -2,17 +2,17 @@ import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AnalyzeRepositoryUseCase } from '../../../../domain/ports/in/analyze-repository.use-case';
-import { SubmitAnalysisUseCase } from '../../../../domain/ports/in/submit-analysis.use-case';
-import { GetAnalysisStatusUseCase } from '../../../../domain/ports/in/get-analysis-status.use-case';
-import { ListAnalysisHistoryUseCase } from '../../../../domain/ports/in/list-analysis-history.use-case';
-import { GetZipUploadUrlUseCase } from '../../../../domain/ports/in/get-zip-upload-url.use-case';
+import { AnalyzeRepositoryUseCase } from '../../../../application/ports/in/analyze-repository.use-case';
+import { SubmitAnalysisUseCase } from '../../../../application/ports/in/submit-analysis.use-case';
+import { GetAnalysisStatusUseCase } from '../../../../application/ports/in/get-analysis-status.use-case';
+import { ListAnalysisHistoryUseCase } from '../../../../application/ports/in/list-analysis-history.use-case';
+import { GetZipUploadUrlUseCase } from '../../../../application/ports/in/get-zip-upload-url.use-case';
 import { AnalyzeRepositoryRequestDto } from './analyze-repository-request.dto';
 import { AnalysisResult } from '../../../../domain/entities/analysis-result.entity';
 import { AnalysisRecord } from '../../../../domain/entities/analysis-record.entity';
-import { PresignedUpload } from '../../../../domain/ports/out/zip-upload.port';
-import { AnalysisHistoryPage } from '../../../../domain/ports/out/analysis-repository.port';
-import { RateLimiterPort } from '../../../../domain/ports/out/rate-limiter.port';
+import { PresignedUpload } from '../../../../application/ports/out/zip-upload.port';
+import { AnalysisHistoryPage } from '../../../../application/ports/out/analysis-repository.port';
+import { RateLimiterPort } from '../../../../application/ports/out/rate-limiter.port';
 import { RATE_LIMITER_PORT } from '../../../config/tokens';
 import {
   UnauthorizedAppError,

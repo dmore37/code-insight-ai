@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AnalysisStateService } from './analysis-state.service';
+import { AnalysisStateService } from '../../core/code-analysis/application/services/analysis-state.service';
 import { DetectedComponent } from '../../core/code-analysis/domain/models/analysis-result.model';
 
 @Component({

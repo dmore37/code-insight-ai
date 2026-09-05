@@ -1,4 +1,4 @@
-import { RepositorySource } from '../../entities/repository-source.entity';
+import { RepositorySource } from '../../../domain/entities/repository-source.entity';
 
 export abstract class RepoFetcherPort {
   abstract fetchFromGit(gitUrl: string): Promise<RepositorySource>;

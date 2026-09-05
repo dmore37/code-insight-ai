@@ -7,8 +7,8 @@ import {
 import {
   AiAnalyzerPort,
   AiAnalysisResult,
-} from '../../../domain/ports/out/ai-analyzer.port';
-import { StaticAnalysisResult } from '../../../domain/ports/out/static-analyzer.port';
+} from '../../../application/ports/out/ai-analyzer.port';
+import { StaticAnalysisResult } from '../../../application/ports/out/static-analyzer.port';
 import { ArchitecturePattern } from '../../../domain/entities/analysis-result.entity';
 import { DEFAULT_AWS_REGION } from '../../config/defaults';
 

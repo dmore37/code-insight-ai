@@ -1,5 +1,5 @@
-import { ApiResponse } from '../models/api-response.model';
-import { AnalysisRecord } from '../models/analysis-record.model';
+import { ApiResponse } from '../../domain/models/api-response.model';
+import { AnalysisRecord } from '../../domain/models/analysis-record.model';
 import { AnalyzeRepositoryCommand } from './analysis-repository.port';
 
 export interface PresignedUpload {

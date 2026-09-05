@@ -5,15 +5,15 @@ import { AnalyzeRepositoryCommand } from '../ports/in/analyze-repository.use-cas
 import { AnalysisRepositoryPort } from '../ports/out/analysis-repository.port';
 import { AnalysisQueuePort } from '../ports/out/analysis-queue.port';
 import { RateLimiterPort } from '../ports/out/rate-limiter.port';
-import { AnalysisRecord } from '../entities/analysis-record.entity';
+import { AnalysisRecord } from '../../domain/entities/analysis-record.entity';
 import {
   ANALYSIS_REPOSITORY_PORT,
   ANALYSIS_QUEUE_PORT,
   RATE_LIMITER_PORT,
 } from '../../infrastructure/config/tokens';
-import { MissingRepositorySourceError, AnalysisQueueError } from '../errors/code-analysis.errors';
+import { MissingRepositorySourceError, AnalysisQueueError } from '../../domain/errors/code-analysis.errors';
 import { RateLimitExceededError } from '../../../../shared/errors/app-error';
-import { CACHE_TTL_MS } from '../config/business-rules.constants';
+import { CACHE_TTL_MS } from '../../domain/config/business-rules.constants';
 
 @Injectable()
 export class SubmitAnalysisService implements SubmitAnalysisUseCase {
@@ -45,11 +45,7 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
       if (cached) return cached;
     }
 
-    // Solo se consume cuota diaria cuando el análisis realmente va a
-    // ejecutarse (cache miss). Un resultado servido desde caché no hace
-    // trabajo real (no llama a Bedrock, no encola job), por lo que no
-    // debe descontarse del límite del usuario/IP.
-    if (command.rateLimitKey && command.rateLimitMax) {
+                    if (command.rateLimitKey && command.rateLimitMax) {
       const allowed = await this.rateLimiter.tryConsume(
         command.rateLimitKey,
         command.rateLimitMax,

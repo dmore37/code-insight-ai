@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { AnalysisResult } from '../../core/code-analysis/domain/models/analysis-result.model';
+import { AnalysisResult } from '../../domain/models/analysis-result.model';
 
 @Injectable({ providedIn: 'root' })
 export class AnalysisStateService {

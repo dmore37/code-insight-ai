@@ -1,6 +1,6 @@
 import { ListAnalysisHistoryService } from './list-analysis-history.service';
 import { AnalysisRepositoryPort } from '../ports/out/analysis-repository.port';
-import { AnalysisRecord, AnalysisStatus } from '../entities/analysis-record.entity';
+import { AnalysisRecord, AnalysisStatus } from '../../domain/entities/analysis-record.entity';
 
 describe('ListAnalysisHistoryService', () => {
   let analysisRepository: jest.Mocked<AnalysisRepositoryPort>;
@@ -22,41 +22,40 @@ describe('ListAnalysisHistoryService', () => {
       findLatestCompletedByGitUrl: jest.fn(),
       findLatestCompletedByZipHash: jest.fn(),
       findRecentPublicAndByOwner: jest.fn(),
+      findRecentPublicAndByOwnerPage: jest.fn(),
     };
     service = new ListAnalysisHistoryService(analysisRepository);
   });
 
   describe('when called without an explicit limit', () => {
     it('should delegate to the repository using the default limit of 20', async () => {
-      // Given
-      analysisRepository.findRecentPublicAndByOwner.mockResolvedValue([
-        makeRecord('a'),
-      ]);
+            analysisRepository.findRecentPublicAndByOwnerPage.mockResolvedValue({
+        items: [makeRecord('a')],
+      });
 
-      // When
-      const result = await service.execute();
+            const result = await service.execute();
 
-      // Then
-      expect(analysisRepository.findRecentPublicAndByOwner).toHaveBeenCalledWith(
+            expect(analysisRepository.findRecentPublicAndByOwnerPage).toHaveBeenCalledWith(
         undefined,
         20,
+        undefined,
       );
-      expect(result).toHaveLength(1);
+      expect(result.items).toHaveLength(1);
     });
   });
 
   describe('when called with an explicit limit and ownerId', () => {
     it('should forward both values unchanged to the repository', async () => {
-      // Given
-      analysisRepository.findRecentPublicAndByOwner.mockResolvedValue([]);
+            analysisRepository.findRecentPublicAndByOwnerPage.mockResolvedValue({
+        items: [],
+      });
 
-      // When
-      await service.execute(5, 'owner-42');
+            await service.execute(5, 'owner-42');
 
-      // Then
-      expect(analysisRepository.findRecentPublicAndByOwner).toHaveBeenCalledWith(
+            expect(analysisRepository.findRecentPublicAndByOwnerPage).toHaveBeenCalledWith(
         'owner-42',
         5,
+        undefined,
       );
     });
   });

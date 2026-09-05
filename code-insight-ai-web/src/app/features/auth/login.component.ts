@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthPort } from '../../core/auth/domain/ports/auth.port';
+import { AuthPort } from '../../core/auth/application/ports/auth.port';
 
 type AuthMode = 'login' | 'signup' | 'confirm' | 'forgot' | 'reset';
 

@@ -8,8 +8,8 @@ import {
   AnalysisHistoryPort,
   AnalysisHistoryPage,
   PresignedUpload,
-} from '../domain/ports/analysis-history.port';
-import { AnalyzeRepositoryCommand } from '../domain/ports/analysis-repository.port';
+} from '../application/ports/analysis-history.port';
+import { AnalyzeRepositoryCommand } from '../application/ports/analysis-repository.port';
 
 @Injectable({ providedIn: 'root' })
 export class HttpAnalysisHistoryAdapter implements AnalysisHistoryPort {

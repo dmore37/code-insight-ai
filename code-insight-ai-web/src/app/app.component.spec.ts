@@ -1,10 +1,20 @@
 import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { AppComponent } from './app.component';
+import { AuthPort } from './core/auth/application/ports/auth.port';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthPort,
+          useValue: { currentUser: signal(null) },
+        },
+      ],
     }).compileComponents();
   });
 
@@ -20,10 +30,10 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('code-insight-ai-web');
   });
 
-  it('should render title', () => {
+  it('should render the router outlet', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, code-insight-ai-web');
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });

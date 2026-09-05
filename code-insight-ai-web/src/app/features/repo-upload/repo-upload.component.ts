@@ -1,11 +1,11 @@
 import { Component, inject, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AnalysisHistoryPort } from '../../core/code-analysis/domain/ports/analysis-history.port';
+import { AnalysisHistoryPort } from '../../core/code-analysis/application/ports/analysis-history.port';
 import { AnalysisStatus } from '../../core/code-analysis/domain/models/analysis-record.model';
-import { AnalysisStateService } from '../analysis-result/analysis-state.service';
+import { AnalysisStateService } from '../../core/code-analysis/application/services/analysis-state.service';
 import { AnalysisHistoryComponent } from '../analysis-history/analysis-history.component';
-import { AuthPort } from '../../core/auth/domain/ports/auth.port';
+import { AuthPort } from '../../core/auth/application/ports/auth.port';
 import { computeFileSha256 } from '../../core/code-analysis/domain/utils/file-hash.util';
 import {
   SUBMIT_POLL_INTERVAL_MS,

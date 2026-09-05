@@ -19,14 +19,11 @@ describe('SqsAnalysisQueueAdapter', () => {
 
   describe('given a job message with a gitUrl', () => {
     it('should send it to the configured queue URL as a JSON string body', async () => {
-      // Given
-      const job = { id: 'job-1', gitUrl: 'https://github.com/owner/repo.git' };
+            const job = { id: 'job-1', gitUrl: 'https://github.com/owner/repo.git' };
 
-      // When
-      await adapter.enqueue(job);
+            await adapter.enqueue(job);
 
-      // Then
-      expect(send).toHaveBeenCalledTimes(1);
+            expect(send).toHaveBeenCalledTimes(1);
       const commandArg = send.mock.calls[0][0];
       expect(commandArg).toBeInstanceOf(SendMessageCommand);
       expect(commandArg.input.QueueUrl).toBe('https://sqs.example.com/queue');

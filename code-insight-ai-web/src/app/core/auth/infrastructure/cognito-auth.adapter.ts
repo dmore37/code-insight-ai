@@ -9,7 +9,7 @@ import {
   ConfirmForgotPasswordCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { environment } from '../../../../environments/environment';
-import { AuthPort, AuthResult } from '../domain/ports/auth.port';
+import { AuthPort, AuthResult } from '../application/ports/auth.port';
 import { AuthUser } from '../domain/models/auth-user.model';
 
 @Injectable({ providedIn: 'root' })

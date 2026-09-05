@@ -2,7 +2,7 @@ import serverlessExpress from '@vendia/serverless-express';
 import type { Handler, SQSEvent } from 'aws-lambda';
 import type { INestApplication } from '@nestjs/common';
 import { createNestApp } from './create-app';
-import { ProcessAnalysisJobUseCase } from './modules/code-analysis/domain/ports/in/process-analysis-job.use-case';
+import { ProcessAnalysisJobUseCase } from './modules/code-analysis/application/ports/in/process-analysis-job.use-case';
 
 let cachedApp: INestApplication;
 let cachedHttpHandler: Handler;

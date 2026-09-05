@@ -1,7 +1,7 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { AnalysisHistoryPort } from '../../core/code-analysis/domain/ports/analysis-history.port';
+import { AnalysisHistoryPort } from '../../core/code-analysis/application/ports/analysis-history.port';
 import {
   AnalysisRecord,
   AnalysisStatus,
@@ -10,8 +10,8 @@ import {
   extractZipDisplayName,
   sanitizeZipReferences,
 } from '../../core/code-analysis/domain/utils/zip-display-name.util';
-import { AnalysisStateService } from '../analysis-result/analysis-state.service';
-import { AuthPort } from '../../core/auth/domain/ports/auth.port';
+import { AnalysisStateService } from '../../core/code-analysis/application/services/analysis-state.service';
+import { AuthPort } from '../../core/auth/application/ports/auth.port';
 import {
   HISTORY_PAGE_SIZE,
   HISTORY_POLLING_INTERVAL_MS,
@@ -35,12 +35,7 @@ export class AnalysisHistoryComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly pageSize = HISTORY_PAGE_SIZE;
 
-  // Paginación con cursor: `cursorStack` guarda el cursor usado para
-  // llegar a cada página anterior (permite "Anterior" sin re-consultar
-  // desde cero); `currentCursor` es el cursor de la página visible;
-  // `nextCursor` es el que devolvió el backend para pedir la siguiente
-  // página (undefined si ya no hay más).
-  private cursorStack: (string | undefined)[] = [];
+            private cursorStack: (string | undefined)[] = [];
   private currentCursor: string | undefined = undefined;
   readonly nextCursor = signal<string | undefined>(undefined);
 

@@ -1,4 +1,4 @@
-import { AnalysisRecord } from '../../entities/analysis-record.entity';
+import { AnalysisRecord } from '../../../domain/entities/analysis-record.entity';
 
 export interface AnalysisHistoryPage {
   items: AnalysisRecord[];
@@ -23,19 +23,7 @@ export abstract class AnalysisRepositoryPort {
     limit: number,
   ): Promise<AnalysisRecord[]>;
 
-  /**
-   * Versión paginada (con cursor) de `findRecentPublicAndByOwner`.
-   *
-   * `findRecentPublicAndByOwner` mezcla en memoria DOS queries de
-   * DynamoDB (feed público por `byCreatedAt` + registros propios por
-   * `byOwner`), las deduplica y las re-ordena por `createdAt`. Un
-   * `LastEvaluatedKey` de una sola query no sirve para paginar ese
-   * resultado combinado, así que este método implementa un "k-way merge"
-   * con un buffer de lookahead por cada fuente, codificado de forma
-   * opaca en `cursor` (base64). Ver la implementación en el adapter para
-   * el detalle del algoritmo.
-   */
-  abstract findRecentPublicAndByOwnerPage(
+    abstract findRecentPublicAndByOwnerPage(
     ownerId: string | undefined,
     pageSize: number,
     cursor?: string,
