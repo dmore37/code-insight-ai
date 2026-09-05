@@ -1,7 +1,7 @@
 import { GetZipUploadUrlService } from './get-zip-upload-url.service';
 import { ZipUploadPort } from '../ports/out/zip-upload.port';
 
-describe('GetZipUploadUrlService', () => {
+describe('GIVEN GetZipUploadUrlService', () => {
   let zipUpload: jest.Mocked<ZipUploadPort>;
   let service: GetZipUploadUrlService;
 
@@ -10,8 +10,8 @@ describe('GetZipUploadUrlService', () => {
     service = new GetZipUploadUrlService(zipUpload);
   });
 
-  describe('given an ownerId and a fileName', () => {
-    it('should delegate to the ZipUploadPort with both arguments and return its result', async () => {
+  describe('GIVEN an ownerId and a fileName', () => {
+    it('WHEN execute is called THEN it should delegate to the ZipUploadPort with both arguments and return its result', async () => {
             zipUpload.generateUploadUrl.mockResolvedValue({
         uploadUrl: 'https://s3.example.com/presigned',
         key: 'uploads/owner-1/uuid__file.zip',

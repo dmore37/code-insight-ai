@@ -21,7 +21,7 @@ function buildRequest(ip = '1.2.3.4'): Request {
   return { ip, headers: {} } as unknown as Request;
 }
 
-describe('AnalysisController', () => {
+describe('GIVEN AnalysisController', () => {
   let analyzeRepository: jest.Mocked<AnalyzeRepositoryUseCase>;
   let submitAnalysis: jest.Mocked<SubmitAnalysisUseCase>;
   let getAnalysisStatus: jest.Mocked<GetAnalysisStatusUseCase>;
@@ -50,8 +50,8 @@ describe('AnalysisController', () => {
     );
   });
 
-  describe('given an anonymous request to analyze a public git URL', () => {
-    it('should not require authentication and should rate-limit by IP', async () => {
+  describe('WHEN an anonymous request analyzes a public git URL', () => {
+    it('WHEN analyze is called anonymously THEN it should not require authentication and should rate-limit by IP', async () => {
             getOwnerIdMock.mockResolvedValue(undefined);
       rateLimiter.tryConsume.mockResolvedValue(true);
       analyzeRepository.execute.mockResolvedValue({} as any);
@@ -66,8 +66,8 @@ describe('AnalysisController', () => {
     });
   });
 
-  describe('given a request to analyze a ZIP without an authenticated ownerId', () => {
-    it('should throw UnauthorizedAppError before touching the rate limiter or the use case', async () => {
+  describe('WHEN a request analyzes a ZIP without an authenticated ownerId', () => {
+    it('WHEN analyze is called without ownerId THEN it should throw UnauthorizedAppError before touching the rate limiter or the use case', async () => {
             getOwnerIdMock.mockResolvedValue(undefined);
 
             await expect(
@@ -78,8 +78,8 @@ describe('AnalysisController', () => {
     });
   });
 
-  describe('given an authenticated request to submit a ZIP analysis', () => {
-    it('should rate-limit by "user:{ownerId}" using the higher authenticated quota', async () => {
+  describe('WHEN an authenticated request submits a ZIP analysis', () => {
+    it('WHEN submit is called with an authenticated ownerId THEN it should rate-limit by "user:{ownerId}" using the higher authenticated quota', async () => {
             getOwnerIdMock.mockResolvedValue('owner-1');
       rateLimiter.tryConsume.mockResolvedValue(true);
       submitAnalysis.execute.mockResolvedValue({} as any);
@@ -96,8 +96,8 @@ describe('AnalysisController', () => {
     });
   });
 
-  describe('given the rate limiter denies the request', () => {
-    it('should throw RateLimitExceededError and never call the use case', async () => {
+  describe('WHEN the rate limiter denies the request', () => {
+    it('WHEN tryConsume resolves false THEN it should throw RateLimitExceededError and never call the use case', async () => {
             getOwnerIdMock.mockResolvedValue(undefined);
       rateLimiter.tryConsume.mockResolvedValue(false);
 
@@ -108,8 +108,8 @@ describe('AnalysisController', () => {
     });
   });
 
-  describe('given a request for a presigned ZIP upload URL without authentication', () => {
-    it('should throw UnauthorizedAppError', async () => {
+  describe('WHEN a request asks for a presigned ZIP upload URL without authentication', () => {
+    it('WHEN getUploadUrl is called without ownerId THEN it should throw UnauthorizedAppError', async () => {
             getOwnerIdMock.mockResolvedValue(undefined);
 
             await expect(
@@ -118,8 +118,8 @@ describe('AnalysisController', () => {
     });
   });
 
-  describe('given an authenticated request for a presigned ZIP upload URL with a fileName', () => {
-    it('should forward the ownerId and fileName to the use case', async () => {
+  describe('WHEN an authenticated request asks for a presigned ZIP upload URL with a fileName', () => {
+    it('WHEN getUploadUrl is called with ownerId and fileName THEN it should forward the ownerId and fileName to the use case', async () => {
             getOwnerIdMock.mockResolvedValue('owner-1');
       getZipUploadUrl.execute.mockResolvedValue({
         uploadUrl: 'https://s3.example.com/presigned',
@@ -136,8 +136,8 @@ describe('AnalysisController', () => {
     });
   });
 
-  describe('given a request for the analysis history without a "limit" query param', () => {
-    it('should pass "undefined" as the limit so the service applies its own default', async () => {
+  describe('WHEN a request asks for the analysis history without a "limit" query param', () => {
+    it('WHEN history is called without limit THEN it should pass "undefined" as the limit so the service applies its own default', async () => {
             getOwnerIdMock.mockResolvedValue(undefined);
       listAnalysisHistory.execute.mockResolvedValue({ items: [] });
 
@@ -147,8 +147,8 @@ describe('AnalysisController', () => {
     });
   });
 
-  describe('given a request for the analysis history with an explicit "limit" query param', () => {
-    it('should parse it into a number before forwarding it to the use case', async () => {
+  describe('WHEN a request asks for the analysis history with an explicit "limit" query param', () => {
+    it('WHEN history is called with a limit string THEN it should parse it into a number before forwarding it to the use case', async () => {
             getOwnerIdMock.mockResolvedValue('owner-1');
       listAnalysisHistory.execute.mockResolvedValue({ items: [] });
 
@@ -158,8 +158,8 @@ describe('AnalysisController', () => {
     });
   });
 
-  describe('given a request to get the status of an existing analysis id', () => {
-    it('should delegate directly to GetAnalysisStatusUseCase', async () => {
+  describe('WHEN a request asks for the status of an existing analysis id', () => {
+    it('WHEN getStatus is called with an id THEN it should delegate directly to GetAnalysisStatusUseCase', async () => {
             getAnalysisStatus.execute.mockResolvedValue({} as any);
 
             await controller.getStatus('abc-123');

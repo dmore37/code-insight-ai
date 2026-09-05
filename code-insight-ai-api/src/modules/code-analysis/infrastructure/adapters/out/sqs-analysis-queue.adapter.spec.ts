@@ -2,7 +2,7 @@ import { SqsAnalysisQueueAdapter } from './sqs-analysis-queue.adapter';
 import { ConfigService } from '@nestjs/config';
 import { SendMessageCommand } from '@aws-sdk/client-sqs';
 
-describe('SqsAnalysisQueueAdapter', () => {
+describe('GIVEN SqsAnalysisQueueAdapter', () => {
   let send: jest.Mock;
   let adapter: SqsAnalysisQueueAdapter;
 
@@ -17,8 +17,8 @@ describe('SqsAnalysisQueueAdapter', () => {
     (adapter as unknown as { client: { send: jest.Mock } }).client = { send };
   });
 
-  describe('given a job message with a gitUrl', () => {
-    it('should send it to the configured queue URL as a JSON string body', async () => {
+  describe('GIVEN a job message with a gitUrl', () => {
+    it('WHEN enqueue is called THEN it should send it to the configured queue URL as a JSON string body', async () => {
             const job = { id: 'job-1', gitUrl: 'https://github.com/owner/repo.git' };
 
             await adapter.enqueue(job);

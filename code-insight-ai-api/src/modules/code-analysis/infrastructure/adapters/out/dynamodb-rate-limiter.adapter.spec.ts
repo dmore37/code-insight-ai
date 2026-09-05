@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 
-describe('DynamoDbRateLimiterAdapter', () => {
+describe('GIVEN DynamoDbRateLimiterAdapter', () => {
   let send: jest.Mock;
   let adapter: DynamoDbRateLimiterAdapter;
 
@@ -17,8 +17,8 @@ describe('DynamoDbRateLimiterAdapter', () => {
         (adapter as unknown as { client: { send: jest.Mock } }).client = { send };
   });
 
-  describe('when the counter for today is below the limit', () => {
-    it('should return true and issue an atomic UpdateCommand with ADD + ConditionExpression', async () => {
+  describe('GIVEN the counter for today is below the limit', () => {
+    it('WHEN tryConsume is called THEN it should return true and issue an atomic UpdateCommand with ADD + ConditionExpression', async () => {
             send.mockResolvedValue({});
 
             const allowed = await adapter.tryConsume('user:abc', 20);
@@ -32,8 +32,8 @@ describe('DynamoDbRateLimiterAdapter', () => {
     });
   });
 
-  describe('when the counter for today has already reached the limit', () => {
-    it('should return false without throwing', async () => {
+  describe('GIVEN the counter for today has already reached the limit', () => {
+    it('WHEN tryConsume is called THEN it should return false without throwing', async () => {
             send.mockRejectedValue(
         new ConditionalCheckFailedException({
           message: 'Condition failed',
@@ -47,8 +47,8 @@ describe('DynamoDbRateLimiterAdapter', () => {
     });
   });
 
-  describe('when DynamoDB fails for a reason other than the condition check', () => {
-    it('should propagate the original error', async () => {
+  describe('GIVEN DynamoDB fails for a reason other than the condition check', () => {
+    it('WHEN tryConsume is called THEN it should propagate the original error', async () => {
             const unexpected = new Error('network error');
       send.mockRejectedValue(unexpected);
 

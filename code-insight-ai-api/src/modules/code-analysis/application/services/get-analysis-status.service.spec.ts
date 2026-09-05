@@ -3,7 +3,7 @@ import { AnalysisRepositoryPort } from '../ports/out/analysis-repository.port';
 import { AnalysisRecord, AnalysisStatus } from '../../domain/entities/analysis-record.entity';
 import { AnalysisNotFoundError } from '../../domain/errors/code-analysis.errors';
 
-describe('GetAnalysisStatusService', () => {
+describe('GIVEN GetAnalysisStatusService', () => {
   let analysisRepository: jest.Mocked<AnalysisRepositoryPort>;
   let service: GetAnalysisStatusService;
 
@@ -20,8 +20,8 @@ describe('GetAnalysisStatusService', () => {
     service = new GetAnalysisStatusService(analysisRepository);
   });
 
-  describe('when a record exists for the given id', () => {
-    it('should return it as-is', async () => {
+  describe('GIVEN a record exists for the given id', () => {
+    it('WHEN execute is called THEN it should return it as-is', async () => {
             const record = new AnalysisRecord(
         'abc-123',
         AnalysisStatus.Processing,
@@ -37,8 +37,8 @@ describe('GetAnalysisStatusService', () => {
     });
   });
 
-  describe('when no record exists for the given id', () => {
-    it('should throw AnalysisNotFoundError', async () => {
+  describe('GIVEN no record exists for the given id', () => {
+    it('WHEN execute is called THEN it should throw AnalysisNotFoundError', async () => {
             analysisRepository.findById.mockResolvedValue(null);
 
             await expect(service.execute('missing-id')).rejects.toBeInstanceOf(

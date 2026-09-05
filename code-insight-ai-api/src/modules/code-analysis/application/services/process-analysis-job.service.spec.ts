@@ -4,7 +4,7 @@ import { AnalysisRepositoryPort } from '../ports/out/analysis-repository.port';
 import { AnalysisRecord, AnalysisStatus } from '../../domain/entities/analysis-record.entity';
 import { AnalysisResult, ArchitecturePattern } from '../../domain/entities/analysis-result.entity';
 
-describe('ProcessAnalysisJobService', () => {
+describe('GIVEN ProcessAnalysisJobService', () => {
   let analyzeRepository: jest.Mocked<AnalyzeRepositoryUseCase>;
   let analysisRepository: jest.Mocked<AnalysisRepositoryPort>;
   let service: ProcessAnalysisJobService;
@@ -40,8 +40,8 @@ describe('ProcessAnalysisJobService', () => {
     service = new ProcessAnalysisJobService(analyzeRepository, analysisRepository);
   });
 
-  describe('when the referenced record no longer exists', () => {
-    it('should skip processing without calling the analyze use case', async () => {
+  describe('GIVEN the referenced record no longer exists', () => {
+    it('WHEN execute is called THEN it should skip processing without calling the analyze use case', async () => {
             analysisRepository.findById.mockResolvedValue(null);
 
             await service.execute({ id: 'missing-job' });
@@ -51,8 +51,8 @@ describe('ProcessAnalysisJobService', () => {
     });
   });
 
-  describe('when the analysis completes successfully', () => {
-    it('should save the record with status "completed" and the job id preserved', async () => {
+  describe('GIVEN the analysis completes successfully', () => {
+    it('WHEN execute is called THEN it should save the record with status "completed" and the job id preserved', async () => {
             analysisRepository.findById.mockResolvedValue(existingRecord);
       analyzeRepository.execute.mockResolvedValue(analysisResult);
 
@@ -69,8 +69,8 @@ describe('ProcessAnalysisJobService', () => {
     });
   });
 
-  describe('when the analysis fails', () => {
-    it('should save the record with status "failed" and the error message', async () => {
+  describe('GIVEN the analysis fails', () => {
+    it('WHEN execute is called THEN it should save the record with status "failed" and the error message', async () => {
             analysisRepository.findById.mockResolvedValue(existingRecord);
       analyzeRepository.execute.mockRejectedValue(new Error('Bedrock unavailable'));
 

@@ -2,7 +2,7 @@ import { ListAnalysisHistoryService } from './list-analysis-history.service';
 import { AnalysisRepositoryPort } from '../ports/out/analysis-repository.port';
 import { AnalysisRecord, AnalysisStatus } from '../../domain/entities/analysis-record.entity';
 
-describe('ListAnalysisHistoryService', () => {
+describe('GIVEN ListAnalysisHistoryService', () => {
   let analysisRepository: jest.Mocked<AnalysisRepositoryPort>;
   let service: ListAnalysisHistoryService;
 
@@ -27,8 +27,8 @@ describe('ListAnalysisHistoryService', () => {
     service = new ListAnalysisHistoryService(analysisRepository);
   });
 
-  describe('when called without an explicit limit', () => {
-    it('should delegate to the repository using the default limit of 20', async () => {
+  describe('GIVEN it is called without an explicit limit', () => {
+    it('WHEN execute is called THEN it should delegate to the repository using the default limit of 20', async () => {
             analysisRepository.findRecentPublicAndByOwnerPage.mockResolvedValue({
         items: [makeRecord('a')],
       });
@@ -44,8 +44,8 @@ describe('ListAnalysisHistoryService', () => {
     });
   });
 
-  describe('when called with an explicit limit and ownerId', () => {
-    it('should forward both values unchanged to the repository', async () => {
+  describe('GIVEN it is called with an explicit limit and ownerId', () => {
+    it('WHEN execute is called THEN it should forward both values unchanged to the repository', async () => {
             analysisRepository.findRecentPublicAndByOwnerPage.mockResolvedValue({
         items: [],
       });

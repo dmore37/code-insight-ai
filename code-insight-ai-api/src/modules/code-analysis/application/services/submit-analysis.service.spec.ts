@@ -5,7 +5,7 @@ import { RateLimiterPort } from '../ports/out/rate-limiter.port';
 import { AnalysisRecord, AnalysisStatus, AnalysisVisibility } from '../../domain/entities/analysis-record.entity';
 import { MissingRepositorySourceError, AnalysisQueueError } from '../../domain/errors/code-analysis.errors';
 
-describe('SubmitAnalysisService', () => {
+describe('GIVEN SubmitAnalysisService', () => {
   let analysisRepository: jest.Mocked<AnalysisRepositoryPort>;
   let analysisQueue: jest.Mocked<AnalysisQueuePort>;
   let rateLimiter: jest.Mocked<RateLimiterPort>;
@@ -27,8 +27,8 @@ describe('SubmitAnalysisService', () => {
     service = new SubmitAnalysisService(analysisRepository, analysisQueue, rateLimiter);
   });
 
-  describe('when the command has no repository source at all', () => {
-    it('should throw MissingRepositorySourceError without saving or enqueuing anything', async () => {
+  describe('GIVEN the command has no repository source at all', () => {
+    it('WHEN execute is called THEN it should throw MissingRepositorySourceError without saving or enqueuing anything', async () => {
             const command = {};
 
             await expect(service.execute(command)).rejects.toBeInstanceOf(
@@ -39,8 +39,8 @@ describe('SubmitAnalysisService', () => {
     });
   });
 
-  describe('when submitting a new gitUrl analysis with no cached result', () => {
-    it('should create a "processing" record, persist it and enqueue the job', async () => {
+  describe('GIVEN submitting a new gitUrl analysis with no cached result', () => {
+    it('WHEN execute is called THEN it should create a "processing" record, persist it and enqueue the job', async () => {
             analysisRepository.findLatestCompletedByGitUrl.mockResolvedValue(null);
 
             const record = await service.execute({
@@ -56,8 +56,8 @@ describe('SubmitAnalysisService', () => {
     });
   });
 
-  describe('when a fresh completed analysis already exists for the same gitUrl', () => {
-    it('should return the cached record without creating a new one or enqueuing anything', async () => {
+  describe('GIVEN a fresh completed analysis already exists for the same gitUrl', () => {
+    it('WHEN execute is called THEN it should return the cached record without creating a new one or enqueuing anything', async () => {
             const cached = new AnalysisRecord(
         'cached-id',
         AnalysisStatus.Completed,
@@ -77,8 +77,8 @@ describe('SubmitAnalysisService', () => {
     });
   });
 
-  describe('when a completed analysis exists for the same gitUrl but it is older than the cache window', () => {
-    it('should ignore the stale cache and submit a brand new analysis', async () => {
+  describe('GIVEN a completed analysis exists for the same gitUrl but it is older than the cache window', () => {
+    it('WHEN execute is called THEN it should ignore the stale cache and submit a brand new analysis', async () => {
             const stale = new AnalysisRecord(
         'stale-id',
         AnalysisStatus.Completed,
@@ -99,8 +99,8 @@ describe('SubmitAnalysisService', () => {
     });
   });
 
-  describe('when submitting a ZIP analysis with a matching cached zipHash', () => {
-    it('should look up the cache by zipHash instead of gitUrl', async () => {
+  describe('GIVEN submitting a ZIP analysis with a matching cached zipHash', () => {
+    it('WHEN execute is called THEN it should look up the cache by zipHash instead of gitUrl', async () => {
             const cached = new AnalysisRecord(
         'cached-zip-id',
         AnalysisStatus.Completed,
@@ -131,8 +131,8 @@ describe('SubmitAnalysisService', () => {
     });
   });
 
-  describe('when enqueuing the job fails after the record was already saved', () => {
-    it('should mark the record as failed, persist it again, and throw AnalysisQueueError', async () => {
+  describe('GIVEN enqueuing the job fails after the record was already saved', () => {
+    it('WHEN execute is called THEN it should mark the record as failed, persist it again, and throw AnalysisQueueError', async () => {
             analysisRepository.findLatestCompletedByGitUrl.mockResolvedValue(null);
       analysisQueue.enqueue.mockRejectedValue(new Error('SQS unavailable'));
 

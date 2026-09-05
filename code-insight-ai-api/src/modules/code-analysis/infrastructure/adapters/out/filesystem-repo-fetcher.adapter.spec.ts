@@ -28,7 +28,7 @@ import { FilesystemRepoFetcherAdapter } from './filesystem-repo-fetcher.adapter'
 import { RepositorySourceType } from '../../../domain/entities/repository-source.entity';
 import { rm, writeFile } from 'node:fs/promises';
 
-describe('FilesystemRepoFetcherAdapter', () => {
+describe('GIVEN FilesystemRepoFetcherAdapter', () => {
   let adapter: FilesystemRepoFetcherAdapter;
 
   beforeEach(() => {
@@ -41,8 +41,8 @@ describe('FilesystemRepoFetcherAdapter', () => {
     adapter = new FilesystemRepoFetcherAdapter(config);
   });
 
-  describe('when fetching from a public git URL', () => {
-    it('should shallow-clone it into a temp dir and return a "git" RepositorySource', async () => {
+  describe('GIVEN fetching from a public git URL', () => {
+    it('WHEN fetchFromGit is called THEN it should shallow-clone it into a temp dir and return a "git" RepositorySource', async () => {
             cloneMock.mockResolvedValue(undefined);
 
             const source = await adapter.fetchFromGit('https://github.com/owner/repo.git');
@@ -57,8 +57,8 @@ describe('FilesystemRepoFetcherAdapter', () => {
     });
   });
 
-  describe('when fetching from a local ZIP file path', () => {
-    it('should extract it into a temp dir and return a "zip" RepositorySource', async () => {
+  describe('GIVEN fetching from a local ZIP file path', () => {
+    it('WHEN fetchFromZip is called THEN it should extract it into a temp dir and return a "zip" RepositorySource', async () => {
             const source = await adapter.fetchFromZip('/tmp/uploaded.zip');
 
             expect(extractEntryToMock).toHaveBeenCalled();
@@ -67,8 +67,8 @@ describe('FilesystemRepoFetcherAdapter', () => {
     });
   });
 
-  describe('when fetching a ZIP uploaded to S3', () => {
-    it('should download it, extract it, clean up the intermediate download dir, and use a readable display name', async () => {
+  describe('GIVEN fetching a ZIP uploaded to S3', () => {
+    it('WHEN fetchFromS3Zip is called THEN it should download it, extract it, clean up the intermediate download dir, and use a readable display name', async () => {
             const s3Send = jest.fn().mockResolvedValue({
         Body: { transformToByteArray: async () => new Uint8Array([1, 2, 3]) },
         ContentLength: 3,
@@ -90,7 +90,7 @@ describe('FilesystemRepoFetcherAdapter', () => {
       expect(source.originalReference).toBe('my-project.zip');
     });
 
-    it('should reject the ZIP when its size in S3 exceeds the configured limit', async () => {
+    it('WHEN fetchFromS3Zip is called with an oversized file THEN it should reject the ZIP when its size in S3 exceeds the configured limit', async () => {
             const s3Send = jest.fn().mockResolvedValue({ ContentLength: 16 * 1024 * 1024 });
       (adapter as unknown as { s3Client: { send: jest.Mock } }).s3Client = { send: s3Send };
 
@@ -101,8 +101,8 @@ describe('FilesystemRepoFetcherAdapter', () => {
     });
   });
 
-  describe('when cleaning up a source after use', () => {
-    it('should recursively remove its local working directory', async () => {
+  describe('GIVEN cleaning up a source after use', () => {
+    it('WHEN cleanup is called THEN it should recursively remove its local working directory', async () => {
             const source = await adapter.fetchFromZip('/tmp/uploaded.zip');
       (rm as jest.Mock).mockClear();
 

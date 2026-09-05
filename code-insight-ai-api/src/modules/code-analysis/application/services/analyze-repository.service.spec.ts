@@ -11,7 +11,7 @@ import {
   AiAnalysisError,
 } from '../../domain/errors/code-analysis.errors';
 
-describe('AnalyzeRepositoryService', () => {
+describe('GIVEN AnalyzeRepositoryService', () => {
   let repoFetcher: jest.Mocked<RepoFetcherPort>;
   let staticAnalyzer: jest.Mocked<StaticAnalyzerPort>;
   let aiAnalyzer: jest.Mocked<AiAnalyzerPort>;
@@ -59,8 +59,8 @@ describe('AnalyzeRepositoryService', () => {
     service = new AnalyzeRepositoryService(repoFetcher, staticAnalyzer, aiAnalyzer);
   });
 
-  describe('when the command has no repository source at all', () => {
-    it('should throw MissingRepositorySourceError without touching any port', async () => {
+  describe('GIVEN the command has no repository source at all', () => {
+    it('WHEN execute is called THEN it should throw MissingRepositorySourceError without touching any port', async () => {
             const command = {};
 
             await expect(service.execute(command)).rejects.toBeInstanceOf(
@@ -72,8 +72,8 @@ describe('AnalyzeRepositoryService', () => {
     });
   });
 
-  describe('when analyzing a public git repository end to end', () => {
-    it('should fetch, statically analyze, enrich with AI, and clean up the source', async () => {
+  describe('GIVEN a public git repository is being analyzed end to end', () => {
+    it('WHEN execute is called THEN it should fetch, statically analyze, enrich with AI, and clean up the source', async () => {
             repoFetcher.fetchFromGit.mockResolvedValue(source);
       staticAnalyzer.analyze.mockResolvedValue(staticResult);
       aiAnalyzer.analyze.mockResolvedValue(aiResult);
@@ -95,8 +95,8 @@ describe('AnalyzeRepositoryService', () => {
     });
   });
 
-  describe('when the source is a ZIP already uploaded to S3', () => {
-    it('should fetch it via fetchFromS3Zip instead of fetchFromGit', async () => {
+  describe('GIVEN the source is a ZIP already uploaded to S3', () => {
+    it('WHEN execute is called THEN it should fetch it via fetchFromS3Zip instead of fetchFromGit', async () => {
             const zipSource = new RepositorySource(
         RepositorySourceType.Zip,
         '/tmp/zip-dir',
@@ -116,8 +116,8 @@ describe('AnalyzeRepositoryService', () => {
     });
   });
 
-  describe('when fetching the repository source fails', () => {
-    it('should wrap the cause into a RepoFetchError and skip static/AI analysis', async () => {
+  describe('GIVEN fetching the repository source fails', () => {
+    it('WHEN execute is called THEN it should wrap the cause into a RepoFetchError and skip static/AI analysis', async () => {
             repoFetcher.fetchFromGit.mockRejectedValue(new Error('clone timed out'));
 
             await expect(
@@ -129,8 +129,8 @@ describe('AnalyzeRepositoryService', () => {
     });
   });
 
-  describe('when static analysis fails after a successful fetch', () => {
-    it('should throw StaticAnalysisError and still clean up the fetched source', async () => {
+  describe('GIVEN static analysis fails after a successful fetch', () => {
+    it('WHEN execute is called THEN it should throw StaticAnalysisError and still clean up the fetched source', async () => {
             repoFetcher.fetchFromGit.mockResolvedValue(source);
       staticAnalyzer.analyze.mockRejectedValue(new Error('unreadable files'));
 
@@ -142,8 +142,8 @@ describe('AnalyzeRepositoryService', () => {
     });
   });
 
-  describe('when the AI analysis step fails after a successful static analysis', () => {
-    it('should throw AiAnalysisError and still clean up the fetched source', async () => {
+  describe('GIVEN the AI analysis step fails after a successful static analysis', () => {
+    it('WHEN execute is called THEN it should throw AiAnalysisError and still clean up the fetched source', async () => {
             repoFetcher.fetchFromGit.mockResolvedValue(source);
       staticAnalyzer.analyze.mockResolvedValue(staticResult);
       aiAnalyzer.analyze.mockRejectedValue(new Error('Bedrock unavailable'));
@@ -155,8 +155,8 @@ describe('AnalyzeRepositoryService', () => {
     });
   });
 
-  describe('when using the display reference for a ZIP uploaded to S3 in an error message', () => {
-    it('should use the readable original file name instead of the raw S3 key', async () => {
+  describe('GIVEN using the display reference for a ZIP uploaded to S3 in an error message', () => {
+    it('WHEN execute is called and it fails THEN it should use the readable original file name instead of the raw S3 key', async () => {
             repoFetcher.fetchFromS3Zip.mockRejectedValue(new Error('network error'));
 
             const promise = service.execute({

@@ -2,7 +2,7 @@ import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 import { ValidationAppError } from '../errors/app-error';
 
-describe('AllExceptionsFilter', () => {
+describe('GIVEN AllExceptionsFilter', () => {
   let filter: AllExceptionsFilter;
   let jsonMock: jest.Mock;
   let statusMock: jest.Mock;
@@ -19,8 +19,8 @@ describe('AllExceptionsFilter', () => {
     } as unknown as ArgumentsHost;
   });
 
-  describe('given a domain AppError (e.g. ValidationAppError)', () => {
-    it('should respond with HTTP 200 and a failure envelope using the error own code', () => {
+  describe('GIVEN a domain AppError (e.g. ValidationAppError)', () => {
+    it('WHEN catch is called with a ValidationAppError THEN it should respond with HTTP 200 and a failure envelope using the error own code', () => {
             const error = new ValidationAppError('Invalid gitUrl');
 
             filter.catch(error, host);
@@ -33,8 +33,8 @@ describe('AllExceptionsFilter', () => {
     });
   });
 
-  describe('given a plain NestJS HttpException with a string response', () => {
-    it('should respond with HTTP 200 and a failure envelope prefixed with "HTTP_"', () => {
+  describe('GIVEN a plain NestJS HttpException with a string response', () => {
+    it('WHEN catch is called with an HttpException THEN it should respond with HTTP 200 and a failure envelope prefixed with "HTTP_"', () => {
             const error = new HttpException('Forbidden', HttpStatus.FORBIDDEN);
 
             filter.catch(error, host);
@@ -47,8 +47,8 @@ describe('AllExceptionsFilter', () => {
     });
   });
 
-  describe('given a NestJS HttpException whose response body has an array of messages', () => {
-    it('should join the messages into a single comma-separated string', () => {
+  describe('GIVEN a NestJS HttpException whose response body has an array of messages', () => {
+    it('WHEN catch is called with an array of messages THEN it should join the messages into a single comma-separated string', () => {
             const error = new HttpException(
         { message: ['gitUrl is required', 'zipS3Key is required'] },
         HttpStatus.BAD_REQUEST,
@@ -67,8 +67,8 @@ describe('AllExceptionsFilter', () => {
     });
   });
 
-  describe('given a completely unexpected error (e.g. a plain Error or AWS SDK exception)', () => {
-    it('should respond with HTTP 200 and the generic "UNEXPECTED_ERROR" code', () => {
+  describe('GIVEN a completely unexpected error (e.g. a plain Error or AWS SDK exception)', () => {
+    it('WHEN catch is called with an unexpected error THEN it should respond with HTTP 200 and the generic "UNEXPECTED_ERROR" code', () => {
             const error = new Error('Something exploded');
 
             filter.catch(error, host);

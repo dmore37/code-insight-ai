@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ArchitecturePattern } from '../../../domain/entities/analysis-result.entity';
 import { StaticAnalysisResult } from '../../../application/ports/out/static-analyzer.port';
 
-describe('BedrockAiAnalyzerAdapter', () => {
+describe('GIVEN BedrockAiAnalyzerAdapter', () => {
   let send: jest.Mock;
 
   const staticResult: StaticAnalysisResult = {
@@ -35,8 +35,8 @@ describe('BedrockAiAnalyzerAdapter', () => {
     send.mockResolvedValue({ body: new TextEncoder().encode(JSON.stringify(body)) });
   }
 
-  describe('given the Amazon Nova model returns a valid JSON payload', () => {
-    it('should parse the functional/architecture/findings sections correctly', async () => {
+  describe('GIVEN the Amazon Nova model returns a valid JSON payload', () => {
+    it('WHEN analyze is called THEN it should parse the functional/architecture/findings sections correctly', async () => {
             const adapter = buildAdapter('amazon.nova-lite-v1:0');
       respondWith({
         output: {
@@ -67,8 +67,8 @@ describe('BedrockAiAnalyzerAdapter', () => {
     });
   });
 
-  describe('given an Anthropic Claude model returns a valid JSON payload', () => {
-    it('should parse the response from the "content[0].text" shape', async () => {
+  describe('GIVEN an Anthropic Claude model returns a valid JSON payload', () => {
+    it('WHEN analyze is called THEN it should parse the response from the "content[0].text" shape', async () => {
             const adapter = buildAdapter('anthropic.claude-3-haiku');
       respondWith({
         content: [
@@ -93,8 +93,8 @@ describe('BedrockAiAnalyzerAdapter', () => {
     });
   });
 
-  describe('given the model returns an architecturePattern outside the known enum values', () => {
-    it('should fall back to "Indeterminado" instead of trusting the raw value', async () => {
+  describe('GIVEN the model returns an architecturePattern outside the known enum values', () => {
+    it('WHEN analyze is called THEN it should fall back to "Indeterminado" instead of trusting the raw value', async () => {
             const adapter = buildAdapter('amazon.nova-lite-v1:0');
       respondWith({
         output: {
@@ -122,8 +122,8 @@ describe('BedrockAiAnalyzerAdapter', () => {
     });
   });
 
-  describe('given Bedrock throws (e.g. AccessDeniedException or network failure)', () => {
-    it('should fall back to a heuristic result instead of throwing', async () => {
+  describe('GIVEN Bedrock throws (e.g. AccessDeniedException or network failure)', () => {
+    it('WHEN analyze is called THEN it should fall back to a heuristic result instead of throwing', async () => {
             const adapter = buildAdapter('amazon.nova-lite-v1:0');
       send.mockRejectedValue(new Error('AccessDeniedException'));
 
@@ -135,8 +135,8 @@ describe('BedrockAiAnalyzerAdapter', () => {
     });
   });
 
-  describe('given the model returns text wrapped in a markdown code fence', () => {
-    it('should strip the fence before parsing the JSON', async () => {
+  describe('GIVEN the model returns text wrapped in a markdown code fence', () => {
+    it('WHEN analyze is called THEN it should strip the fence before parsing the JSON', async () => {
             const adapter = buildAdapter('amazon.nova-lite-v1:0');
       const rawJson = JSON.stringify({
         summary: 'fenced',

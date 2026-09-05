@@ -2,7 +2,7 @@ import { of, firstValueFrom } from 'rxjs';
 import { ResponseEnvelopeInterceptor } from './response-envelope.interceptor';
 import { CallHandler, ExecutionContext, HttpStatus } from '@nestjs/common';
 
-describe('ResponseEnvelopeInterceptor', () => {
+describe('GIVEN ResponseEnvelopeInterceptor', () => {
   let interceptor: ResponseEnvelopeInterceptor<unknown>;
   let statusMock: jest.Mock;
   let context: ExecutionContext;
@@ -17,8 +17,8 @@ describe('ResponseEnvelopeInterceptor', () => {
     } as unknown as ExecutionContext;
   });
 
-  describe('given a handler that resolves with a plain payload', () => {
-    it('should force HTTP 200 and wrap the payload as a success envelope', async () => {
+  describe('GIVEN a handler that resolves with a plain payload', () => {
+    it('WHEN intercept is called THEN it should force HTTP 200 and wrap the payload as a success envelope', async () => {
             const handler: CallHandler = { handle: () => of({ id: '123' }) };
 
             const result = await firstValueFrom(interceptor.intercept(context, handler));

@@ -20,13 +20,13 @@ function buildConfig(values: Record<string, string | undefined>): ConfigService 
   } as unknown as ConfigService;
 }
 
-describe('getOwnerId', () => {
+describe('GIVEN getOwnerId', () => {
   beforeEach(() => {
     verifyMock.mockReset();
   });
 
-  describe('when Cognito is configured and the bearer token is valid', () => {
-    it('should return the "sub" claim from the verified token', async () => {
+  describe('GIVEN Cognito is configured and the bearer token is valid', () => {
+    it('WHEN getOwnerId is called with a valid token THEN it should return the "sub" claim from the verified token', async () => {
             verifyMock.mockResolvedValue({ sub: 'user-123' });
       const req = buildRequest({ authorization: 'Bearer valid-token' });
       const config = buildConfig({
@@ -41,8 +41,8 @@ describe('getOwnerId', () => {
     });
   });
 
-  describe('when Cognito is configured but the token is invalid or expired', () => {
-    it('should treat the request as anonymous and return undefined', async () => {
+  describe('GIVEN Cognito is configured but the token is invalid or expired', () => {
+    it('WHEN getOwnerId is called with an invalid token THEN it should treat the request as anonymous and return undefined', async () => {
             verifyMock.mockRejectedValue(new Error('token expired'));
       const req = buildRequest({ authorization: 'Bearer expired-token' });
       const config = buildConfig({
@@ -56,8 +56,8 @@ describe('getOwnerId', () => {
     });
   });
 
-  describe('when there is no Authorization header at all', () => {
-    it('should return undefined without attempting to verify anything', async () => {
+  describe('GIVEN there is no Authorization header at all', () => {
+    it('WHEN getOwnerId is called without a header THEN it should return undefined without attempting to verify anything', async () => {
             const req = buildRequest({});
       const config = buildConfig({
         COGNITO_USER_POOL_ID: 'pool-1',
@@ -71,8 +71,8 @@ describe('getOwnerId', () => {
     });
   });
 
-  describe('when Cognito is not configured (local development without env vars)', () => {
-    it('should fall back to the "x-user-id" header for local testing', async () => {
+  describe('GIVEN Cognito is not configured (local development without env vars)', () => {
+    it('WHEN getOwnerId is called without Cognito config THEN it should fall back to the "x-user-id" header for local testing', async () => {
             const req = buildRequest({ 'x-user-id': 'local-dev-user' });
       const config = buildConfig({});
 

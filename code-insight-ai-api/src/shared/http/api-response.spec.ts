@@ -1,8 +1,8 @@
 import { ok, fail } from './api-response';
 
-describe('api-response helpers', () => {
-  describe('given a successful payload', () => {
-    it('ok() should wrap it as { success: true, data }', () => {
+describe('GIVEN api-response helpers', () => {
+  describe('GIVEN a successful payload', () => {
+    it('WHEN ok() is called THEN it should wrap it as { success: true, data }', () => {
             const payload = { id: '123' };
 
             const response = ok(payload);
@@ -11,8 +11,8 @@ describe('api-response helpers', () => {
     });
   });
 
-  describe('given an error code, message and optional details', () => {
-    it('fail() should wrap them as { success: false, error }', () => {
+  describe('GIVEN an error code, message and optional details', () => {
+    it('WHEN fail() is called THEN it should wrap them as { success: false, error }', () => {
             const response = fail('VALIDATION_ERROR', 'Invalid input', { field: 'gitUrl' });
 
             expect(response).toEqual({
@@ -26,8 +26,8 @@ describe('api-response helpers', () => {
     });
   });
 
-  describe('given an error without details', () => {
-    it('fail() should leave "details" as undefined', () => {
+  describe('GIVEN an error without details', () => {
+    it('WHEN fail() is called without details THEN it should leave "details" as undefined', () => {
             const response = fail('NOT_FOUND', 'Missing resource');
 
             expect(response.success).toBe(false);

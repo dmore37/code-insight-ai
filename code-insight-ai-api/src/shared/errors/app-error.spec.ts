@@ -6,9 +6,9 @@ import {
   RateLimitExceededError,
 } from './app-error';
 
-describe('AppError subclasses', () => {
-  describe('given a ValidationAppError with details', () => {
-    it('should expose a stable "VALIDATION_ERROR" code and preserve the message/details', () => {
+describe('GIVEN AppError subclasses', () => {
+  describe('GIVEN a ValidationAppError with details', () => {
+    it('WHEN a ValidationAppError is created THEN it should expose a stable "VALIDATION_ERROR" code and preserve the message/details', () => {
             const error = new ValidationAppError('Invalid payload', { field: 'gitUrl' });
 
             expect(error).toBeInstanceOf(AppError);
@@ -19,8 +19,8 @@ describe('AppError subclasses', () => {
     });
   });
 
-  describe('given an UnauthorizedAppError created without a custom message', () => {
-    it('should default to a generic "please sign in" message', () => {
+  describe('GIVEN an UnauthorizedAppError created without a custom message', () => {
+    it('WHEN an UnauthorizedAppError is created without a message THEN it should default to a generic "please sign in" message', () => {
             const error = new UnauthorizedAppError();
 
             expect(error.code).toBe('UNAUTHORIZED');
@@ -28,16 +28,16 @@ describe('AppError subclasses', () => {
     });
   });
 
-  describe('given an UnexpectedAppError', () => {
-    it('should expose the "UNEXPECTED_ERROR" code', () => {
+  describe('GIVEN an UnexpectedAppError', () => {
+    it('WHEN an UnexpectedAppError is created THEN it should expose the "UNEXPECTED_ERROR" code', () => {
             const error = new UnexpectedAppError();
 
             expect(error.code).toBe('UNEXPECTED_ERROR');
     });
   });
 
-  describe('given a RateLimitExceededError', () => {
-    it('should expose the "RATE_LIMIT_EXCEEDED" code', () => {
+  describe('GIVEN a RateLimitExceededError', () => {
+    it('WHEN a RateLimitExceededError is created THEN it should expose the "RATE_LIMIT_EXCEEDED" code', () => {
             const error = new RateLimitExceededError();
 
             expect(error.code).toBe('RATE_LIMIT_EXCEEDED');
