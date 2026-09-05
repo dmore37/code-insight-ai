@@ -1,9 +1,22 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthPort } from '../../core/auth/application/ports/auth.port';
 
 type AuthMode = 'login' | 'signup' | 'confirm' | 'forgot' | 'reset';
+
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+enum AuthUiMessage {
+  FillAllFields = 'Completa todos los campos.',
+  PasswordRequirements = 'La contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, una minúscula y un número.',
+  AccountCreated = 'Cuenta creada. Revisa tu correo e ingresa el código de confirmación.',
+  EnterConfirmationCode = 'Ingresa el código de confirmación.',
+  AccountConfirmed = 'Cuenta confirmada. Ya puedes iniciar sesión.',
+  RecoveryCodeSent = 'Te enviamos un código de recuperación a tu correo.',
+  FillCodeAndNewPassword = 'Completa el código y la nueva contraseña.',
+  PasswordUpdated = 'Contraseña actualizada. Ya puedes iniciar sesión.',
+}
 
 @Component({
   selector: 'app-login',
@@ -22,6 +35,23 @@ export class LoginComponent {
   confirmationCode = '';
   newPassword = '';
 
+  passwordTouched = signal(false);
+  newPasswordTouched = signal(false);
+
+  readonly passwordValid = computed(() => PASSWORD_REGEX.test(this.password));
+  readonly newPasswordValid = computed(() =>
+    PASSWORD_REGEX.test(this.newPassword),
+  );
+  readonly passwordHint = AuthUiMessage.PasswordRequirements;
+
+  onPasswordInput(): void {
+    this.passwordTouched.set(true);
+  }
+
+  onNewPasswordInput(): void {
+    this.newPasswordTouched.set(true);
+  }
+
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   infoMessage = signal<string | null>(null);
@@ -31,6 +61,8 @@ export class LoginComponent {
     this.mode.set(mode);
     this.errorMessage.set(null);
     this.infoMessage.set(null);
+    this.passwordTouched.set(false);
+    this.newPasswordTouched.set(false);
   }
 
   async onSubmit(): Promise<void> {
@@ -40,7 +72,7 @@ export class LoginComponent {
     const requiresPassword =
       this.mode() !== 'confirm' && this.mode() !== 'forgot';
     if (!this.email.trim() || (requiresPassword && !this.password)) {
-      this.errorMessage.set('Completa todos los campos.');
+      this.errorMessage.set(AuthUiMessage.FillAllFields);
       return;
     }
 
@@ -72,20 +104,23 @@ export class LoginComponent {
   }
 
   private async doSignUp(): Promise<void> {
+    if (!this.passwordValid()) {
+      this.passwordTouched.set(true);
+      this.errorMessage.set(AuthUiMessage.PasswordRequirements);
+      return;
+    }
     const result = await this.auth.signUp(this.email.trim(), this.password);
     if (!result.success) {
       this.errorMessage.set(result.message);
       return;
     }
-    this.infoMessage.set(
-      'Cuenta creada. Revisa tu correo e ingresa el código de confirmación.',
-    );
+    this.infoMessage.set(AuthUiMessage.AccountCreated);
     this.mode.set('confirm');
   }
 
   private async doConfirm(): Promise<void> {
     if (!this.confirmationCode.trim()) {
-      this.errorMessage.set('Ingresa el código de confirmación.');
+      this.errorMessage.set(AuthUiMessage.EnterConfirmationCode);
       return;
     }
     const result = await this.auth.confirmSignUp(
@@ -96,7 +131,7 @@ export class LoginComponent {
       this.errorMessage.set(result.message);
       return;
     }
-    this.infoMessage.set('Cuenta confirmada. Ya puedes iniciar sesión.');
+    this.infoMessage.set(AuthUiMessage.AccountConfirmed);
     this.mode.set('login');
   }
 
@@ -106,15 +141,18 @@ export class LoginComponent {
       this.errorMessage.set(result.message);
       return;
     }
-    this.infoMessage.set(
-      'Te enviamos un código de recuperación a tu correo.',
-    );
+    this.infoMessage.set(AuthUiMessage.RecoveryCodeSent);
     this.mode.set('reset');
   }
 
   private async doResetPassword(): Promise<void> {
     if (!this.confirmationCode.trim() || !this.newPassword) {
-      this.errorMessage.set('Completa el código y la nueva contraseña.');
+      this.errorMessage.set(AuthUiMessage.FillCodeAndNewPassword);
+      return;
+    }
+    if (!this.newPasswordValid()) {
+      this.newPasswordTouched.set(true);
+      this.errorMessage.set(AuthUiMessage.PasswordRequirements);
       return;
     }
     const result = await this.auth.confirmForgotPassword(
@@ -126,7 +164,7 @@ export class LoginComponent {
       this.errorMessage.set(result.message);
       return;
     }
-    this.infoMessage.set('Contraseña actualizada. Ya puedes iniciar sesión.');
+    this.infoMessage.set(AuthUiMessage.PasswordUpdated);
     this.password = '';
     this.newPassword = '';
     this.confirmationCode = '';

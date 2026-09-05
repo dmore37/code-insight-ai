@@ -42,13 +42,18 @@
         name="password"
         type="password"
         [(ngModel)]="password"
+        (input)="onPasswordInput()"
         [disabled]="isLoading()"
+        [pattern]="mode() === 'signup' ? '(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}' : ''"
         required
       />
       @if (mode() === 'signup') {
-        <p class="password-hint">
-          Debe tener al menos 8 caracteres, incluyendo una mayúscula, una
-          minúscula y un número. No se requieren caracteres especiales.
+        <p
+          class="password-hint"
+          [class.valid]="passwordValid()"
+          [class.invalid]="passwordTouched() && !passwordValid()"
+        >
+          {{ passwordHint }}
         </p>
       }
     }
@@ -90,12 +95,17 @@
         name="new-password"
         type="password"
         [(ngModel)]="newPassword"
+        (input)="onNewPasswordInput()"
         [disabled]="isLoading()"
+        pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}"
         required
       />
-      <p class="password-hint">
-        Debe tener al menos 8 caracteres, incluyendo una mayúscula, una
-        minúscula y un número.
+      <p
+        class="password-hint"
+        [class.valid]="newPasswordValid()"
+        [class.invalid]="newPasswordTouched() && !newPasswordValid()"
+      >
+        {{ passwordHint }}
       </p>
     }
 

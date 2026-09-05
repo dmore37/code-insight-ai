@@ -131,7 +131,63 @@ export class CognitoAuthAdapter implements AuthPort {
   }
 
   private toMessage(err: unknown): string {
-    if (err instanceof Error) return err.message;
-    return 'Ocurrió un error inesperado.';
+    const name = this.errorName(err);
+    const known = COGNITO_ERROR_MESSAGES[name];
+    if (known) return known;
+
+    return GENERIC_UNEXPECTED_ERROR_MESSAGE;
+  }
+
+  private errorName(err: unknown): string {
+    if (err && typeof err === 'object' && 'name' in err) {
+      return String((err as { name: unknown }).name);
+    }
+    return '';
   }
 }
+
+const GENERIC_UNEXPECTED_ERROR_MESSAGE =
+  'Ocurrió un error inesperado al procesar la solicitud.';
+
+const COGNITO_ERROR_MESSAGES: Record<string, string> = {
+  UsernameExistsException:
+    'Ya existe una cuenta registrada con ese correo electrónico.',
+  AliasExistsException:
+    'Ese correo electrónico ya está en uso por otra cuenta.',
+  UserNotFoundException: 'No existe ninguna cuenta con ese correo electrónico.',
+  NotAuthorizedException: 'Correo o contraseña incorrectos.',
+  UserNotConfirmedException:
+    'Tu cuenta aún no ha sido confirmada. Revisa tu correo e ingresa el código de confirmación.',
+  PasswordResetRequiredException:
+    'Debes restablecer tu contraseña antes de continuar. Usa la opción "¿Olvidaste tu contraseña?".',
+
+  InvalidPasswordException:
+    'La contraseña no cumple con los requisitos: mínimo 8 caracteres, una mayúscula, una minúscula y un número.',
+  InvalidParameterException:
+    'Alguno de los datos ingresados no es válido. Revísalos e intenta de nuevo.',
+
+  CodeMismatchException:
+    'El código ingresado no es correcto. Verifica e intenta de nuevo.',
+  ExpiredCodeException:
+    'El código ha expirado. Solicita uno nuevo e intenta de nuevo.',
+  CodeDeliveryFailureException:
+    'No se pudo enviar el código de verificación a tu correo. Intenta de nuevo más tarde.',
+
+  LimitExceededException:
+    'Se alcanzó el límite de intentos. Espera unos minutos e intenta de nuevo.',
+  TooManyRequestsException:
+    'Demasiados intentos en poco tiempo. Espera unos minutos e intenta de nuevo.',
+  TooManyFailedAttemptsException:
+    'Demasiados intentos fallidos. Espera unos minutos e intenta de nuevo.',
+
+  ResourceNotFoundException:
+    'El servicio de autenticación no está disponible en este momento. Intenta de nuevo más tarde.',
+  InternalErrorException:
+    'El servicio de autenticación tuvo un problema interno. Intenta de nuevo más tarde.',
+  UnexpectedLambdaException:
+    'El servicio de autenticación tuvo un problema interno. Intenta de nuevo más tarde.',
+  UserLambdaValidationException:
+    'No se pudo completar la validación de la cuenta. Intenta de nuevo más tarde.',
+  InvalidEmailRoleAccessPolicyException:
+    'El servicio de envío de correos no está disponible en este momento. Intenta de nuevo más tarde.',
+};
