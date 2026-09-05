@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ListAnalysisHistoryUseCase } from '../ports/in/list-analysis-history.use-case';
-import { AnalysisRepositoryPort } from '../ports/out/analysis-repository.port';
-import { AnalysisRecord } from '../entities/analysis-record.entity';
+import {
+  AnalysisRepositoryPort,
+  AnalysisHistoryPage,
+} from '../ports/out/analysis-repository.port';
 import { ANALYSIS_REPOSITORY_PORT } from '../../infrastructure/config/tokens';
 
-const DEFAULT_LIMIT = 20;
+const DEFAULT_PAGE_SIZE = 20;
 
 @Injectable()
 export class ListAnalysisHistoryService implements ListAnalysisHistoryUseCase {
@@ -14,9 +16,14 @@ export class ListAnalysisHistoryService implements ListAnalysisHistoryUseCase {
   ) {}
 
   async execute(
-    limit: number = DEFAULT_LIMIT,
+    pageSize: number = DEFAULT_PAGE_SIZE,
     ownerId?: string,
-  ): Promise<AnalysisRecord[]> {
-    return this.analysisRepository.findRecentPublicAndByOwner(ownerId, limit);
+    cursor?: string,
+  ): Promise<AnalysisHistoryPage> {
+    return this.analysisRepository.findRecentPublicAndByOwnerPage(
+      ownerId,
+      pageSize,
+      cursor,
+    );
   }
 }

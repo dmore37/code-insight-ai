@@ -1,5 +1,9 @@
-import { AnalysisRecord } from '../../entities/analysis-record.entity';
+import { AnalysisHistoryPage } from '../out/analysis-repository.port';
 
 export abstract class ListAnalysisHistoryUseCase {
-  abstract execute(limit?: number, ownerId?: string): Promise<AnalysisRecord[]>;
+  abstract execute(
+    pageSize?: number,
+    ownerId?: string,
+    cursor?: string,
+  ): Promise<AnalysisHistoryPage>;
 }

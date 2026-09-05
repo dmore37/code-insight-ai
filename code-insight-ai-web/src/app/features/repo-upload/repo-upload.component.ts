@@ -199,7 +199,7 @@ export class RepoUploadComponent {
         : submitResponse.data;
 
     this.currentStep.set(AnalysisStep.Finishing);
-    this.historyList?.load();
+    this.historyList?.resetToFirstPage();
 
     if (record.status === AnalysisStatus.Completed && record.result) {
       this.analysisState.setResult(record.result);
@@ -216,7 +216,7 @@ export class RepoUploadComponent {
   }
 
   private async pollAndRefresh(id: string) {
-    this.historyList?.load();
+    this.historyList?.resetToFirstPage();
     this.currentStep.set(AnalysisStep.Processing);
     return this.pollUntilFinished(id);
   }

@@ -6,6 +6,7 @@ import { ApiResponse } from '../domain/models/api-response.model';
 import { AnalysisRecord } from '../domain/models/analysis-record.model';
 import {
   AnalysisHistoryPort,
+  AnalysisHistoryPage,
   PresignedUpload,
 } from '../domain/ports/analysis-history.port';
 import { AnalyzeRepositoryCommand } from '../domain/ports/analysis-repository.port';
@@ -31,11 +32,16 @@ export class HttpAnalysisHistoryAdapter implements AnalysisHistoryPort {
     );
   }
 
-  async getHistory(limit = 20): Promise<ApiResponse<AnalysisRecord[]>> {
+  async getHistory(
+    pageSize = 20,
+    cursor?: string,
+  ): Promise<ApiResponse<AnalysisHistoryPage>> {
+    const params: Record<string, string> = { limit: String(pageSize) };
+    if (cursor) params['cursor'] = cursor;
     return firstValueFrom(
-      this.http.get<ApiResponse<AnalysisRecord[]>>(
+      this.http.get<ApiResponse<AnalysisHistoryPage>>(
         `${this.baseUrl}/analysis`,
-        { params: { limit } },
+        { params },
       ),
     );
   }

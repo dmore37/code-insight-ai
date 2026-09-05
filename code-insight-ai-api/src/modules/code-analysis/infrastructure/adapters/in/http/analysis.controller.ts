@@ -11,6 +11,7 @@ import { AnalyzeRepositoryRequestDto } from './analyze-repository-request.dto';
 import { AnalysisResult } from '../../../../domain/entities/analysis-result.entity';
 import { AnalysisRecord } from '../../../../domain/entities/analysis-record.entity';
 import { PresignedUpload } from '../../../../domain/ports/out/zip-upload.port';
+import { AnalysisHistoryPage } from '../../../../domain/ports/out/analysis-repository.port';
 import { RateLimiterPort } from '../../../../domain/ports/out/rate-limiter.port';
 import { RATE_LIMITER_PORT } from '../../../config/tokens';
 import {
@@ -63,13 +64,15 @@ export class AnalysisController {
       req,
       dto.zipFilePath ?? dto.zipS3Key,
     );
-    await this.enforceRateLimit(req, ownerId);
+    const { key, limit } = this.rateLimitFor(req, ownerId);
     return this.submitAnalysis.execute({
       gitUrl: dto.gitUrl,
       zipFilePath: dto.zipFilePath,
       zipS3Key: dto.zipS3Key,
       zipHash: dto.zipHash,
       ownerId,
+      rateLimitKey: key,
+      rateLimitMax: limit,
     });
   }
 
@@ -96,11 +99,12 @@ export class AnalysisController {
   @Get()
   async history(
     @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
     @Req() req?: Request,
-  ): Promise<AnalysisRecord[]> {
+  ): Promise<AnalysisHistoryPage> {
     const ownerId = req ? await getOwnerId(req, this.config) : undefined;
     const parsed = limit ? Number(limit) : undefined;
-    return this.listAnalysisHistory.execute(parsed, ownerId);
+    return this.listAnalysisHistory.execute(parsed, ownerId, cursor);
   }
 
   private async requireOwnerIdForZip(
@@ -112,15 +116,22 @@ export class AnalysisController {
     return ownerId;
   }
 
-  private async enforceRateLimit(
+  private rateLimitFor(
     req: Request,
     ownerId: string | undefined,
-  ): Promise<void> {
+  ): { key: string; limit: number } {
     const key = ownerId ? `user:${ownerId}` : `ip:${req.ip ?? 'unknown'}`;
     const limit = ownerId
       ? DAILY_LIMIT_PER_USER
       : DAILY_LIMIT_PER_ANONYMOUS_IP;
+    return { key, limit };
+  }
 
+  private async enforceRateLimit(
+    req: Request,
+    ownerId: string | undefined,
+  ): Promise<void> {
+    const { key, limit } = this.rateLimitFor(req, ownerId);
     const allowed = await this.rateLimiter.tryConsume(key, limit);
     if (!allowed) throw new RateLimitExceededError();
   }

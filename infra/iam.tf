@@ -49,6 +49,7 @@ data "aws_iam_policy_document" "dynamodb_analysis_history" {
     actions = [
       "dynamodb:PutItem",
       "dynamodb:GetItem",
+      "dynamodb:BatchGetItem",
       "dynamodb:Query",
       "dynamodb:UpdateItem",
     ]

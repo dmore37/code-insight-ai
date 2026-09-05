@@ -54,9 +54,22 @@
         </li>
       }
     </ul>
-    <div class="load-more">
-      <button type="button" (click)="loadMore()" [disabled]="isLoading()">
-        Cargar más
+    <div class="pagination">
+      @if (hasPreviousPage()) {
+        <button
+          type="button"
+          (click)="goToPreviousPage()"
+          [disabled]="isLoading()"
+        >
+          ← Anterior
+        </button>
+      }
+      <button
+        type="button"
+        (click)="goToNextPage()"
+        [disabled]="isLoading() || !hasNextPage()"
+      >
+        Siguiente →
       </button>
     </div>
   }

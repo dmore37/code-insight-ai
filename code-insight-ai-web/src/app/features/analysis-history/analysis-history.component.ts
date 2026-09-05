@@ -33,7 +33,16 @@ export class AnalysisHistoryComponent {
   readonly records = signal<AnalysisRecord[]>([]);
   readonly isLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly pageSize = signal(HISTORY_PAGE_SIZE);
+  readonly pageSize = HISTORY_PAGE_SIZE;
+
+  // Paginación con cursor: `cursorStack` guarda el cursor usado para
+  // llegar a cada página anterior (permite "Anterior" sin re-consultar
+  // desde cero); `currentCursor` es el cursor de la página visible;
+  // `nextCursor` es el que devolvió el backend para pedir la siguiente
+  // página (undefined si ya no hay más).
+  private cursorStack: (string | undefined)[] = [];
+  private currentCursor: string | undefined = undefined;
+  readonly nextCursor = signal<string | undefined>(undefined);
 
   readonly retryingIds = signal<Set<string>>(new Set());
 
@@ -43,7 +52,7 @@ export class AnalysisHistoryComponent {
 
     effect(() => {
       this.auth.currentUser();
-      this.load();
+      this.resetToFirstPage();
     });
   }
 
@@ -51,9 +60,13 @@ export class AnalysisHistoryComponent {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     try {
-      const response = await this.analysisHistory.getHistory(this.pageSize());
+      const response = await this.analysisHistory.getHistory(
+        this.pageSize,
+        this.currentCursor,
+      );
       if (response.success) {
-        this.records.set(response.data);
+        this.records.set(response.data.items);
+        this.nextCursor.set(response.data.nextCursor);
         this.syncPolling();
       } else {
         this.errorMessage.set(
@@ -70,8 +83,31 @@ export class AnalysisHistoryComponent {
     }
   }
 
-  async loadMore(): Promise<void> {
-    this.pageSize.update((size) => size + HISTORY_PAGE_SIZE);
+  resetToFirstPage(): void {
+    this.cursorStack = [];
+    this.currentCursor = undefined;
+    this.nextCursor.set(undefined);
+    void this.load();
+  }
+
+  hasNextPage(): boolean {
+    return this.nextCursor() !== undefined;
+  }
+
+  hasPreviousPage(): boolean {
+    return this.cursorStack.length > 0;
+  }
+
+  async goToNextPage(): Promise<void> {
+    if (!this.hasNextPage()) return;
+    this.cursorStack.push(this.currentCursor);
+    this.currentCursor = this.nextCursor();
+    await this.load();
+  }
+
+  async goToPreviousPage(): Promise<void> {
+    if (!this.hasPreviousPage()) return;
+    this.currentCursor = this.cursorStack.pop();
     await this.load();
   }
 

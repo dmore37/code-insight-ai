@@ -5,6 +5,7 @@ export enum ArchitecturePattern {
   Hexagonal = 'Hexagonal',
   Microservices = 'Microservicios',
   NLayers = 'N-Capas',
+  InfrastructureAsCode = 'Infraestructura como Código (IaC)',
   Undetermined = 'Indeterminado',
 }
 
