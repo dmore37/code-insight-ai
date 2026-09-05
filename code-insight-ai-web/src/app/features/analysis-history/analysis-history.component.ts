@@ -1,7 +1,7 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { AnalysisHistoryPort } from '../../core/code-analysis/domain/ports/analysis-history.port';
+import { AnalysisHistoryPort } from '../../core/code-analysis/application/ports/analysis-history.port';
 import {
   AnalysisRecord,
   AnalysisStatus,
@@ -10,8 +10,8 @@ import {
   extractZipDisplayName,
   sanitizeZipReferences,
 } from '../../core/code-analysis/domain/utils/zip-display-name.util';
-import { AnalysisStateService } from '../analysis-result/analysis-state.service';
-import { AuthPort } from '../../core/auth/domain/ports/auth.port';
+import { AnalysisStateService } from '../../core/code-analysis/application/services/analysis-state.service';
+import { AuthPort } from '../../core/auth/application/ports/auth.port';
 import {
   HISTORY_PAGE_SIZE,
   HISTORY_POLLING_INTERVAL_MS,
@@ -33,7 +33,11 @@ export class AnalysisHistoryComponent {
   readonly records = signal<AnalysisRecord[]>([]);
   readonly isLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly pageSize = signal(HISTORY_PAGE_SIZE);
+  readonly pageSize = HISTORY_PAGE_SIZE;
+
+            private cursorStack: (string | undefined)[] = [];
+  private currentCursor: string | undefined = undefined;
+  readonly nextCursor = signal<string | undefined>(undefined);
 
   readonly retryingIds = signal<Set<string>>(new Set());
 
@@ -43,7 +47,7 @@ export class AnalysisHistoryComponent {
 
     effect(() => {
       this.auth.currentUser();
-      this.load();
+      this.resetToFirstPage();
     });
   }
 
@@ -51,9 +55,13 @@ export class AnalysisHistoryComponent {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     try {
-      const response = await this.analysisHistory.getHistory(this.pageSize());
+      const response = await this.analysisHistory.getHistory(
+        this.pageSize,
+        this.currentCursor,
+      );
       if (response.success) {
-        this.records.set(response.data);
+        this.records.set(response.data.items);
+        this.nextCursor.set(response.data.nextCursor);
         this.syncPolling();
       } else {
         this.errorMessage.set(
@@ -70,8 +78,31 @@ export class AnalysisHistoryComponent {
     }
   }
 
-  async loadMore(): Promise<void> {
-    this.pageSize.update((size) => size + HISTORY_PAGE_SIZE);
+  resetToFirstPage(): void {
+    this.cursorStack = [];
+    this.currentCursor = undefined;
+    this.nextCursor.set(undefined);
+    void this.load();
+  }
+
+  hasNextPage(): boolean {
+    return this.nextCursor() !== undefined;
+  }
+
+  hasPreviousPage(): boolean {
+    return this.cursorStack.length > 0;
+  }
+
+  async goToNextPage(): Promise<void> {
+    if (!this.hasNextPage()) return;
+    this.cursorStack.push(this.currentCursor);
+    this.currentCursor = this.nextCursor();
+    await this.load();
+  }
+
+  async goToPreviousPage(): Promise<void> {
+    if (!this.hasPreviousPage()) return;
+    this.currentCursor = this.cursorStack.pop();
     await this.load();
   }
 

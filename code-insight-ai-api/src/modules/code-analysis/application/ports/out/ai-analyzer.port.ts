@@ -3,7 +3,7 @@ import {
   ArchitectureInference,
   FunctionalAnalysis,
   Findings,
-} from '../../entities/analysis-result.entity';
+} from '../../../domain/entities/analysis-result.entity';
 
 export interface AiAnalysisResult {
   functional: FunctionalAnalysis;

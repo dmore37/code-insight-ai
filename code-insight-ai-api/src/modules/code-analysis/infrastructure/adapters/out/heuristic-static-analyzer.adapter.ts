@@ -6,7 +6,7 @@ import {
   StaticAnalyzerPort,
   StaticAnalysisResult,
   StaticAnalysisEvidence,
-} from '../../../domain/ports/out/static-analyzer.port';
+} from '../../../application/ports/out/static-analyzer.port';
 import { DetectedComponent, DetectedComponentType, HttpEndpoint } from '../../../domain/entities/analysis-result.entity';
 
 const IGNORED_DIRS = new Set([
@@ -30,6 +30,8 @@ const LANGUAGE_BY_EXT: Record<string, string> = {
   '.go': 'Go',
   '.rb': 'Ruby',
   '.cs': 'C#',
+  '.tf': 'HCL (Terraform)',
+  '.php': 'PHP',
 };
 
 interface FileEntry {
@@ -134,10 +136,21 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
   }
 
   private detectFramework(root: string, files: FileEntry[]): string {
-    const has = (name: string) => files.some((f) => f.relativePath === name);
+    const findRootFile = (name: string): FileEntry | undefined => {
+      const matches = files.filter(
+        (f) => (f.relativePath.split('/').pop() ?? '') === name,
+      );
+      if (matches.length === 0) return undefined;
+      return matches.sort(
+        (a, b) => a.relativePath.split('/').length - b.relativePath.split('/').length,
+      )[0];
+    };
+    const has = (name: string) => findRootFile(name) !== undefined;
     const readJson = (name: string): any => {
+      const file = findRootFile(name);
+      if (!file) return {};
       try {
-        return JSON.parse(readFileSync(join(root, name), 'utf-8'));
+        return JSON.parse(readFileSync(file.fullPath, 'utf-8'));
       } catch {
         return {};
       }
@@ -156,6 +169,22 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
       return 'Node.js';
     }
     if (has('requirements.txt') || has('pyproject.toml')) return 'Python';
+
+    if (has('composer.json')) {
+      const pkg = readJson('composer.json');
+      const deps = { ...pkg.require, ...pkg['require-dev'] };
+      if (Object.keys(deps).some((d) => d.startsWith('laravel/'))) return 'Laravel';
+      if (Object.keys(deps).some((d) => d.startsWith('symfony/'))) return 'Symfony';
+      if (Object.keys(deps).some((d) => d.startsWith('codeigniter'))) return 'CodeIgniter';
+      return 'PHP (Composer)';
+    }
+
+    const phpFileCount = files.filter((f) => f.ext === '.php').length;
+    if (phpFileCount > 0 && phpFileCount >= files.length * 0.3) return 'PHP';
+
+    const tfFileCount = files.filter((f) => f.ext === '.tf').length;
+    if (tfFileCount > 0 && tfFileCount >= files.length * 0.3) return 'Terraform';
+
     return 'Desconocido';
   }
 
@@ -163,10 +192,10 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
     const components: DetectedComponent[] = [];
 
     const rules: { regex: RegExp; type: DetectedComponent['type'] }[] = [
-      { regex: /controller\.ts$|controller\.js$|Controller\.java$/i, type: DetectedComponentType.Controller },
-      { regex: /service\.ts$|service\.js$|Service\.java$/i, type: DetectedComponentType.Service },
-      { regex: /repository\.ts$|repository\.js$|Repository\.java$/i, type: DetectedComponentType.Repository },
-      { regex: /(entity|model)\.ts$|Entity\.java$|Model\.java$/i, type: DetectedComponentType.Model },
+      { regex: /controller\.ts$|controller\.js$|Controller\.java$|Controller\.php$/i, type: DetectedComponentType.Controller },
+      { regex: /service\.ts$|service\.js$|Service\.java$|Service\.php$/i, type: DetectedComponentType.Service },
+      { regex: /repository\.ts$|repository\.js$|Repository\.java$|Repository\.php$/i, type: DetectedComponentType.Repository },
+      { regex: /(entity|model)\.ts$|Entity\.java$|Model\.java$|Model\.php$/i, type: DetectedComponentType.Model },
       { regex: /\.component\.ts$/i, type: DetectedComponentType.AngularComponent },
     ];
 
@@ -278,7 +307,7 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
     ];
 
     const candidateFiles = files.filter((f) =>
-      ['.ts', '.js', '.java'].includes(f.ext),
+      ['.ts', '.js', '.java', '.php'].includes(f.ext),
     );
 
     for (const file of candidateFiles.slice(0, 300)) {
@@ -295,6 +324,47 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
       }
     }
 
+    evidences.push(...this.collectFolderStructureEvidences(files));
+
+    return evidences;
+  }
+
+    private collectFolderStructureEvidences(files: FileEntry[]): StaticAnalysisEvidence[] {
+    const evidences: StaticAnalysisEvidence[] = [];
+    const paths = files.map((f) => f.relativePath.replace(/\\/g, '/'));
+    const hasPathMatching = (regex: RegExp) => paths.some((p) => regex.test(p));
+
+    const hasPorts = hasPathMatching(/\/(domain\/)?ports\/(in|out)\//i);
+    const hasAdapters = hasPathMatching(/\/(infrastructure\/)?adapters\/(in|out)\//i);
+    const hasDomainInfraSplit =
+      hasPathMatching(/\/domain\//i) && hasPathMatching(/\/infrastructure\//i);
+
+    if (hasPorts && hasAdapters) {
+      evidences.push({
+        description:
+          'Estructura de carpetas ports/adapters (application/ports/in|out + infrastructure/adapters/in|out): fuerte indicio de Arquitectura Hexagonal (Puertos y Adaptadores), NO MVC clásico.',
+        filePath: paths.find((p) => /\/(domain\/)?ports\//i.test(p)) ?? '',
+      });
+    } else if (hasDomainInfraSplit) {
+      evidences.push({
+        description:
+          'Separación de carpetas domain/ e infrastructure/: indicio de Arquitectura Hexagonal o Clean Architecture, NO MVC clásico.',
+        filePath: paths.find((p) => /\/domain\//i.test(p)) ?? '',
+      });
+    }
+
+    const hasClassicMvcDirs =
+      hasPathMatching(/\/(controllers?)\//i) &&
+      hasPathMatching(/\/(models?)\//i) &&
+      hasPathMatching(/\/(views?)\//i);
+    if (hasClassicMvcDirs && !hasPorts && !hasDomainInfraSplit) {
+      evidences.push({
+        description:
+          'Estructura clásica de carpetas controllers/ + models/ + views/: indicio de MVC tradicional.',
+        filePath: paths.find((p) => /\/controllers?\//i.test(p)) ?? '',
+      });
+    }
+
     return evidences;
   }
 
@@ -306,7 +376,7 @@ export class HeuristicStaticAnalyzerAdapter implements StaticAnalyzerPort {
   }
 
   private extractKeyFiles(files: FileEntry[]): { path: string; content: string }[] {
-    const keyNames = ['main.ts', 'main.java', 'app.module.ts', 'index.ts', 'app.py'];
+    const keyNames = ['main.ts', 'main.java', 'app.module.ts', 'index.ts', 'app.py', 'index.php', 'composer.json'];
     const result: { path: string; content: string }[] = [];
 
     for (const file of files) {

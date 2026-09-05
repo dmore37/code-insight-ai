@@ -1,9 +1,9 @@
 import { BedrockAiAnalyzerAdapter } from './bedrock-ai-analyzer.adapter';
 import { ConfigService } from '@nestjs/config';
 import { ArchitecturePattern } from '../../../domain/entities/analysis-result.entity';
-import { StaticAnalysisResult } from '../../../domain/ports/out/static-analyzer.port';
+import { StaticAnalysisResult } from '../../../application/ports/out/static-analyzer.port';
 
-describe('BedrockAiAnalyzerAdapter', () => {
+describe('GIVEN BedrockAiAnalyzerAdapter', () => {
   let send: jest.Mock;
 
   const staticResult: StaticAnalysisResult = {
@@ -35,10 +35,9 @@ describe('BedrockAiAnalyzerAdapter', () => {
     send.mockResolvedValue({ body: new TextEncoder().encode(JSON.stringify(body)) });
   }
 
-  describe('given the Amazon Nova model returns a valid JSON payload', () => {
-    it('should parse the functional/architecture/findings sections correctly', async () => {
-      // Given
-      const adapter = buildAdapter('amazon.nova-lite-v1:0');
+  describe('GIVEN the Amazon Nova model returns a valid JSON payload', () => {
+    it('WHEN analyze is called THEN it should parse the functional/architecture/findings sections correctly', async () => {
+            const adapter = buildAdapter('amazon.nova-lite-v1:0');
       respondWith({
         output: {
           message: {
@@ -59,21 +58,18 @@ describe('BedrockAiAnalyzerAdapter', () => {
         },
       });
 
-      // When
-      const result = await adapter.analyze(staticResult);
+            const result = await adapter.analyze(staticResult);
 
-      // Then
-      expect(result.functional.summary).toBe('A NestJS API.');
+            expect(result.functional.summary).toBe('A NestJS API.');
       expect(result.architecture.pattern).toBe(ArchitecturePattern.Hexagonal);
       expect(result.architecture.confidence).toBe(0.9);
       expect(result.findings.recommendations).toEqual(['Add more tests']);
     });
   });
 
-  describe('given an Anthropic Claude model returns a valid JSON payload', () => {
-    it('should parse the response from the "content[0].text" shape', async () => {
-      // Given
-      const adapter = buildAdapter('anthropic.claude-3-haiku');
+  describe('GIVEN an Anthropic Claude model returns a valid JSON payload', () => {
+    it('WHEN analyze is called THEN it should parse the response from the "content[0].text" shape', async () => {
+            const adapter = buildAdapter('anthropic.claude-3-haiku');
       respondWith({
         content: [
           {
@@ -90,19 +86,16 @@ describe('BedrockAiAnalyzerAdapter', () => {
         ],
       });
 
-      // When
-      const result = await adapter.analyze(staticResult);
+            const result = await adapter.analyze(staticResult);
 
-      // Then
-      expect(result.functional.summary).toBe('A Claude-analyzed project.');
+            expect(result.functional.summary).toBe('A Claude-analyzed project.');
       expect(result.architecture.pattern).toBe(ArchitecturePattern.Mvc);
     });
   });
 
-  describe('given the model returns an architecturePattern outside the known enum values', () => {
-    it('should fall back to "Indeterminado" instead of trusting the raw value', async () => {
-      // Given
-      const adapter = buildAdapter('amazon.nova-lite-v1:0');
+  describe('GIVEN the model returns an architecturePattern outside the known enum values', () => {
+    it('WHEN analyze is called THEN it should fall back to "Indeterminado" instead of trusting the raw value', async () => {
+            const adapter = buildAdapter('amazon.nova-lite-v1:0');
       respondWith({
         output: {
           message: {
@@ -123,34 +116,28 @@ describe('BedrockAiAnalyzerAdapter', () => {
         },
       });
 
-      // When
-      const result = await adapter.analyze(staticResult);
+            const result = await adapter.analyze(staticResult);
 
-      // Then
-      expect(result.architecture.pattern).toBe(ArchitecturePattern.Undetermined);
+            expect(result.architecture.pattern).toBe(ArchitecturePattern.Undetermined);
     });
   });
 
-  describe('given Bedrock throws (e.g. AccessDeniedException or network failure)', () => {
-    it('should fall back to a heuristic result instead of throwing', async () => {
-      // Given
-      const adapter = buildAdapter('amazon.nova-lite-v1:0');
+  describe('GIVEN Bedrock throws (e.g. AccessDeniedException or network failure)', () => {
+    it('WHEN analyze is called THEN it should fall back to a heuristic result instead of throwing', async () => {
+            const adapter = buildAdapter('amazon.nova-lite-v1:0');
       send.mockRejectedValue(new Error('AccessDeniedException'));
 
-      // When
-      const result = await adapter.analyze(staticResult);
+            const result = await adapter.analyze(staticResult);
 
-      // Then
-      expect(result.architecture.pattern).toBe(ArchitecturePattern.Undetermined);
+            expect(result.architecture.pattern).toBe(ArchitecturePattern.Undetermined);
       expect(result.functional.summary).toContain('repo');
       expect(result.findings.recommendations.length).toBeGreaterThan(0);
     });
   });
 
-  describe('given the model returns text wrapped in a markdown code fence', () => {
-    it('should strip the fence before parsing the JSON', async () => {
-      // Given
-      const adapter = buildAdapter('amazon.nova-lite-v1:0');
+  describe('GIVEN the model returns text wrapped in a markdown code fence', () => {
+    it('WHEN analyze is called THEN it should strip the fence before parsing the JSON', async () => {
+            const adapter = buildAdapter('amazon.nova-lite-v1:0');
       const rawJson = JSON.stringify({
         summary: 'fenced',
         technologiesDetected: [],
@@ -164,11 +151,9 @@ describe('BedrockAiAnalyzerAdapter', () => {
         output: { message: { content: [{ text: '```json\n' + rawJson + '\n```' }] } },
       });
 
-      // When
-      const result = await adapter.analyze(staticResult);
+            const result = await adapter.analyze(staticResult);
 
-      // Then
-      expect(result.functional.summary).toBe('fenced');
+            expect(result.functional.summary).toBe('fenced');
       expect(result.architecture.pattern).toBe(ArchitecturePattern.Monolith);
     });
   });

@@ -1,26 +1,21 @@
 import { ok, fail } from './api-response';
 
-describe('api-response helpers', () => {
-  describe('given a successful payload', () => {
-    it('ok() should wrap it as { success: true, data }', () => {
-      // Given
-      const payload = { id: '123' };
+describe('GIVEN api-response helpers', () => {
+  describe('GIVEN a successful payload', () => {
+    it('WHEN ok() is called THEN it should wrap it as { success: true, data }', () => {
+            const payload = { id: '123' };
 
-      // When
-      const response = ok(payload);
+            const response = ok(payload);
 
-      // Then
-      expect(response).toEqual({ success: true, data: payload });
+            expect(response).toEqual({ success: true, data: payload });
     });
   });
 
-  describe('given an error code, message and optional details', () => {
-    it('fail() should wrap them as { success: false, error }', () => {
-      // Given / When
-      const response = fail('VALIDATION_ERROR', 'Invalid input', { field: 'gitUrl' });
+  describe('GIVEN an error code, message and optional details', () => {
+    it('WHEN fail() is called THEN it should wrap them as { success: false, error }', () => {
+            const response = fail('VALIDATION_ERROR', 'Invalid input', { field: 'gitUrl' });
 
-      // Then
-      expect(response).toEqual({
+            expect(response).toEqual({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
@@ -31,13 +26,11 @@ describe('api-response helpers', () => {
     });
   });
 
-  describe('given an error without details', () => {
-    it('fail() should leave "details" as undefined', () => {
-      // Given / When
-      const response = fail('NOT_FOUND', 'Missing resource');
+  describe('GIVEN an error without details', () => {
+    it('WHEN fail() is called without details THEN it should leave "details" as undefined', () => {
+            const response = fail('NOT_FOUND', 'Missing resource');
 
-      // Then
-      expect(response.success).toBe(false);
+            expect(response.success).toBe(false);
       expect((response as any).error.details).toBeUndefined();
     });
   });

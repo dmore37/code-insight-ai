@@ -1,11 +1,18 @@
 import { ConfigService } from '@nestjs/config';
 
 const cloneMock = jest.fn();
-const extractAllToMock = jest.fn();
+const extractEntryToMock = jest.fn();
+const getEntriesMock = jest.fn(() => [
+  { entryName: 'src/index.ts' },
+  { entryName: 'node_modules/some-pkg/index.js' },
+]);
 
 jest.mock('simple-git', () => jest.fn(() => ({ clone: cloneMock })));
 jest.mock('adm-zip', () =>
-  jest.fn().mockImplementation(() => ({ extractAllTo: extractAllToMock })),
+  jest.fn().mockImplementation(() => ({
+    getEntries: getEntriesMock,
+    extractEntryTo: extractEntryToMock,
+  })),
 );
 jest.mock('node:fs/promises', () => {
   const actual = jest.requireActual('node:fs/promises');
@@ -21,7 +28,7 @@ import { FilesystemRepoFetcherAdapter } from './filesystem-repo-fetcher.adapter'
 import { RepositorySourceType } from '../../../domain/entities/repository-source.entity';
 import { rm, writeFile } from 'node:fs/promises';
 
-describe('FilesystemRepoFetcherAdapter', () => {
+describe('GIVEN FilesystemRepoFetcherAdapter', () => {
   let adapter: FilesystemRepoFetcherAdapter;
 
   beforeEach(() => {
@@ -34,16 +41,13 @@ describe('FilesystemRepoFetcherAdapter', () => {
     adapter = new FilesystemRepoFetcherAdapter(config);
   });
 
-  describe('when fetching from a public git URL', () => {
-    it('should shallow-clone it into a temp dir and return a "git" RepositorySource', async () => {
-      // Given
-      cloneMock.mockResolvedValue(undefined);
+  describe('GIVEN fetching from a public git URL', () => {
+    it('WHEN fetchFromGit is called THEN it should shallow-clone it into a temp dir and return a "git" RepositorySource', async () => {
+            cloneMock.mockResolvedValue(undefined);
 
-      // When
-      const source = await adapter.fetchFromGit('https://github.com/owner/repo.git');
+            const source = await adapter.fetchFromGit('https://github.com/owner/repo.git');
 
-      // Then
-      expect(cloneMock).toHaveBeenCalledWith(
+            expect(cloneMock).toHaveBeenCalledWith(
         'https://github.com/owner/repo.git',
         expect.stringContaining('code-insight-git-'),
         ['--depth', '1'],
@@ -53,35 +57,31 @@ describe('FilesystemRepoFetcherAdapter', () => {
     });
   });
 
-  describe('when fetching from a local ZIP file path', () => {
-    it('should extract it into a temp dir and return a "zip" RepositorySource', async () => {
-      // Given / When
-      const source = await adapter.fetchFromZip('/tmp/uploaded.zip');
+  describe('GIVEN fetching from a local ZIP file path', () => {
+    it('WHEN fetchFromZip is called THEN it should extract it into a temp dir and return a "zip" RepositorySource', async () => {
+            const source = await adapter.fetchFromZip('/tmp/uploaded.zip');
 
-      // Then
-      expect(extractAllToMock).toHaveBeenCalled();
+            expect(extractEntryToMock).toHaveBeenCalled();
       expect(source.type).toBe(RepositorySourceType.Zip);
       expect(source.originalReference).toBe('/tmp/uploaded.zip');
     });
   });
 
-  describe('when fetching a ZIP uploaded to S3', () => {
-    it('should download it, extract it, clean up the intermediate download dir, and use a readable display name', async () => {
-      // Given
-      const s3Send = jest.fn().mockResolvedValue({
+  describe('GIVEN fetching a ZIP uploaded to S3', () => {
+    it('WHEN fetchFromS3Zip is called THEN it should download it, extract it, clean up the intermediate download dir, and use a readable display name', async () => {
+            const s3Send = jest.fn().mockResolvedValue({
         Body: { transformToByteArray: async () => new Uint8Array([1, 2, 3]) },
+        ContentLength: 3,
       });
       (adapter as unknown as { s3Client: { send: jest.Mock } }).s3Client = { send: s3Send };
 
-      // When
-      const source = await adapter.fetchFromS3Zip(
+            const source = await adapter.fetchFromS3Zip(
         'uploads/owner-1/uuid__my-project.zip',
       );
 
-      // Then
-      expect(s3Send).toHaveBeenCalledTimes(1);
+            expect(s3Send).toHaveBeenCalledTimes(2);
       expect(writeFile).toHaveBeenCalled();
-      expect(extractAllToMock).toHaveBeenCalled();
+      expect(extractEntryToMock).toHaveBeenCalled();
       expect(rm).toHaveBeenCalledWith(
         expect.stringContaining('code-insight-s3zip-src-'),
         { recursive: true, force: true },
@@ -89,19 +89,26 @@ describe('FilesystemRepoFetcherAdapter', () => {
       expect(source.type).toBe(RepositorySourceType.Zip);
       expect(source.originalReference).toBe('my-project.zip');
     });
+
+    it('WHEN fetchFromS3Zip is called with an oversized file THEN it should reject the ZIP when its size in S3 exceeds the configured limit', async () => {
+            const s3Send = jest.fn().mockResolvedValue({ ContentLength: 16 * 1024 * 1024 });
+      (adapter as unknown as { s3Client: { send: jest.Mock } }).s3Client = { send: s3Send };
+
+            await expect(
+        adapter.fetchFromS3Zip('uploads/owner-1/uuid__too-big.zip'),
+      ).rejects.toThrow(/supera el límite/);
+      expect(s3Send).toHaveBeenCalledTimes(1);
+    });
   });
 
-  describe('when cleaning up a source after use', () => {
-    it('should recursively remove its local working directory', async () => {
-      // Given
-      const source = await adapter.fetchFromZip('/tmp/uploaded.zip');
+  describe('GIVEN cleaning up a source after use', () => {
+    it('WHEN cleanup is called THEN it should recursively remove its local working directory', async () => {
+            const source = await adapter.fetchFromZip('/tmp/uploaded.zip');
       (rm as jest.Mock).mockClear();
 
-      // When
-      await adapter.cleanup(source);
+            await adapter.cleanup(source);
 
-      // Then
-      expect(rm).toHaveBeenCalledWith(source.localPath, { recursive: true, force: true });
+            expect(rm).toHaveBeenCalledWith(source.localPath, { recursive: true, force: true });
     });
   });
 });

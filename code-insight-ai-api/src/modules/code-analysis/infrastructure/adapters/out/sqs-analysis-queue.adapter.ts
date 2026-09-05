@@ -4,7 +4,7 @@ import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import {
   AnalysisQueuePort,
   AnalysisJobMessage,
-} from '../../../domain/ports/out/analysis-queue.port';
+} from '../../../application/ports/out/analysis-queue.port';
 import { DEFAULT_AWS_REGION } from '../../config/defaults';
 
 @Injectable()

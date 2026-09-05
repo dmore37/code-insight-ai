@@ -1,78 +1,65 @@
 import { AnalyzeRepositoryRequestDto } from './analyze-repository-request.dto';
 import { ValidationAppError } from '../../../../../../shared/errors/app-error';
 
-describe('AnalyzeRepositoryRequestDto.validate', () => {
-  describe('given a body that is not a JSON object', () => {
-    it('should throw ValidationAppError', () => {
-      // Given
-      const body = 'not an object';
+describe('GIVEN AnalyzeRepositoryRequestDto.validate', () => {
+  describe('GIVEN a body that is not a JSON object', () => {
+    it('WHEN validate is called THEN it should throw ValidationAppError', () => {
+            const body = 'not an object';
 
-      // When / Then
-      expect(() => AnalyzeRepositoryRequestDto.validate(body)).toThrow(
+            expect(() => AnalyzeRepositoryRequestDto.validate(body)).toThrow(
         ValidationAppError,
       );
     });
   });
 
-  describe('given a null body', () => {
-    it('should throw ValidationAppError', () => {
-      // Given / When / Then
-      expect(() => AnalyzeRepositoryRequestDto.validate(null)).toThrow(
+  describe('GIVEN a null body', () => {
+    it('WHEN validate is called THEN it should throw ValidationAppError', () => {
+            expect(() => AnalyzeRepositoryRequestDto.validate(null)).toThrow(
         ValidationAppError,
       );
     });
   });
 
-  describe('given a body with a non-string gitUrl', () => {
-    it('should throw ValidationAppError', () => {
-      // Given
-      const body = { gitUrl: 123 };
+  describe('GIVEN a body with a non-string gitUrl', () => {
+    it('WHEN validate is called THEN it should throw ValidationAppError', () => {
+            const body = { gitUrl: 123 };
 
-      // When / Then
-      expect(() => AnalyzeRepositoryRequestDto.validate(body)).toThrow(
+            expect(() => AnalyzeRepositoryRequestDto.validate(body)).toThrow(
         ValidationAppError,
       );
     });
   });
 
-  describe('given a body without gitUrl, zipFilePath or zipS3Key', () => {
-    it('should throw ValidationAppError', () => {
-      // Given
-      const body = {};
+  describe('GIVEN a body without gitUrl, zipFilePath or zipS3Key', () => {
+    it('WHEN validate is called THEN it should throw ValidationAppError', () => {
+            const body = {};
 
-      // When / Then
-      expect(() => AnalyzeRepositoryRequestDto.validate(body)).toThrow(
+            expect(() => AnalyzeRepositoryRequestDto.validate(body)).toThrow(
         ValidationAppError,
       );
     });
   });
 
-  describe('given a valid body with only gitUrl', () => {
-    it('should return a dto with gitUrl set and the rest undefined', () => {
-      // Given
-      const body = { gitUrl: 'https://github.com/owner/repo.git' };
+  describe('GIVEN a valid body with only gitUrl', () => {
+    it('WHEN validate is called THEN it should return a dto with gitUrl set and the rest undefined', () => {
+            const body = { gitUrl: 'https://github.com/owner/repo.git' };
 
-      // When
-      const dto = AnalyzeRepositoryRequestDto.validate(body);
+            const dto = AnalyzeRepositoryRequestDto.validate(body);
 
-      // Then
-      expect(dto.gitUrl).toBe('https://github.com/owner/repo.git');
+            expect(dto.gitUrl).toBe('https://github.com/owner/repo.git');
       expect(dto.zipFilePath).toBeUndefined();
       expect(dto.zipS3Key).toBeUndefined();
       expect(dto.zipHash).toBeUndefined();
     });
   });
 
-  describe('given a valid body with zipS3Key and zipHash', () => {
-    it('should return a dto with both fields set', () => {
-      // Given
-      const body = { zipS3Key: 'uploads/u1/key.zip', zipHash: 'abc123' };
+  describe('GIVEN a valid body with zipS3Key and zipHash', () => {
+    it('WHEN validate is called THEN it should return a dto with both fields set', () => {
+            const body = { zipS3Key: 'uploads/u1/key.zip', zipHash: 'abc123' };
 
-      // When
-      const dto = AnalyzeRepositoryRequestDto.validate(body);
+            const dto = AnalyzeRepositoryRequestDto.validate(body);
 
-      // Then
-      expect(dto.zipS3Key).toBe('uploads/u1/key.zip');
+            expect(dto.zipS3Key).toBe('uploads/u1/key.zip');
       expect(dto.zipHash).toBe('abc123');
     });
   });

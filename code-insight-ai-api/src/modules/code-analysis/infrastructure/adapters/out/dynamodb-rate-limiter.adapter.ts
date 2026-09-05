@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
-import { RateLimiterPort } from '../../../domain/ports/out/rate-limiter.port';
+import { RateLimiterPort } from '../../../application/ports/out/rate-limiter.port';
 import {
   DEFAULT_AWS_REGION,
   DEFAULT_DYNAMODB_TABLE_NAME,

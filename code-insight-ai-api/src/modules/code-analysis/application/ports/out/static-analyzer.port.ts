@@ -1,8 +1,8 @@
-import { RepositorySource } from '../../entities/repository-source.entity';
+import { RepositorySource } from '../../../domain/entities/repository-source.entity';
 import {
   DetectedComponent,
   GeneralInfo,
-} from '../../entities/analysis-result.entity';
+} from '../../../domain/entities/analysis-result.entity';
 
 export interface StaticAnalysisEvidence {
   description: string;

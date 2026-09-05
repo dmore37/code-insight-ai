@@ -1,5 +1,5 @@
 import { Signal } from '@angular/core';
-import { AuthUser } from '../models/auth-user.model';
+import { AuthUser } from '../../domain/models/auth-user.model';
 
 export type AuthResult =
   | { success: true }

@@ -1,4 +1,4 @@
-import { AnalysisResult } from '../../entities/analysis-result.entity';
+import { AnalysisResult } from '../../../domain/entities/analysis-result.entity';
 
 export interface AnalyzeRepositoryCommand {
 
@@ -11,6 +11,10 @@ export interface AnalyzeRepositoryCommand {
   zipHash?: string;
 
   ownerId?: string;
+
+    rateLimitKey?: string;
+
+  rateLimitMax?: number;
 }
 
 export abstract class AnalyzeRepositoryUseCase {

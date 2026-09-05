@@ -1,6 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AnalysisStateService } from './analysis-state.service';
+import { AnalysisStateService } from '../../core/code-analysis/application/services/analysis-state.service';
 import { DetectedComponent } from '../../core/code-analysis/domain/models/analysis-result.model';
 
 @Component({
@@ -14,6 +14,14 @@ export class AnalysisResultComponent {
   private readonly router = inject(Router);
 
   readonly result = this.analysisState.result;
+
+  constructor() {
+    effect(() => {
+      if (!this.result()) {
+        this.router.navigateByUrl('/');
+      }
+    });
+  }
 
   readonly confidencePercent = computed(() => {
     const r = this.result();

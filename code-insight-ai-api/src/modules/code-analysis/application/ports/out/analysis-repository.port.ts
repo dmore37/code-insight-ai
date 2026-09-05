@@ -1,4 +1,9 @@
-import { AnalysisRecord } from '../../entities/analysis-record.entity';
+import { AnalysisRecord } from '../../../domain/entities/analysis-record.entity';
+
+export interface AnalysisHistoryPage {
+  items: AnalysisRecord[];
+  nextCursor?: string;
+}
 
 export abstract class AnalysisRepositoryPort {
   abstract save(record: AnalysisRecord): Promise<void>;
@@ -17,5 +22,11 @@ export abstract class AnalysisRepositoryPort {
     ownerId: string | undefined,
     limit: number,
   ): Promise<AnalysisRecord[]>;
+
+    abstract findRecentPublicAndByOwnerPage(
+    ownerId: string | undefined,
+    pageSize: number,
+    cursor?: string,
+  ): Promise<AnalysisHistoryPage>;
 }
 

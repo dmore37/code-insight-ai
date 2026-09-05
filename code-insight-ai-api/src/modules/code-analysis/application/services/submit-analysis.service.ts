@@ -4,13 +4,16 @@ import { SubmitAnalysisUseCase } from '../ports/in/submit-analysis.use-case';
 import { AnalyzeRepositoryCommand } from '../ports/in/analyze-repository.use-case';
 import { AnalysisRepositoryPort } from '../ports/out/analysis-repository.port';
 import { AnalysisQueuePort } from '../ports/out/analysis-queue.port';
-import { AnalysisRecord } from '../entities/analysis-record.entity';
+import { RateLimiterPort } from '../ports/out/rate-limiter.port';
+import { AnalysisRecord } from '../../domain/entities/analysis-record.entity';
 import {
   ANALYSIS_REPOSITORY_PORT,
   ANALYSIS_QUEUE_PORT,
+  RATE_LIMITER_PORT,
 } from '../../infrastructure/config/tokens';
-import { MissingRepositorySourceError, AnalysisQueueError } from '../errors/code-analysis.errors';
-import { CACHE_TTL_MS } from '../config/business-rules.constants';
+import { MissingRepositorySourceError, AnalysisQueueError } from '../../domain/errors/code-analysis.errors';
+import { RateLimitExceededError } from '../../../../shared/errors/app-error';
+import { CACHE_TTL_MS } from '../../domain/config/business-rules.constants';
 
 @Injectable()
 export class SubmitAnalysisService implements SubmitAnalysisUseCase {
@@ -19,6 +22,8 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
     private readonly analysisRepository: AnalysisRepositoryPort,
     @Inject(ANALYSIS_QUEUE_PORT)
     private readonly analysisQueue: AnalysisQueuePort,
+    @Inject(RATE_LIMITER_PORT)
+    private readonly rateLimiter: RateLimiterPort,
   ) {}
 
   async execute(command: AnalyzeRepositoryCommand): Promise<AnalysisRecord> {
@@ -38,6 +43,14 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
         ),
       );
       if (cached) return cached;
+    }
+
+                    if (command.rateLimitKey && command.rateLimitMax) {
+      const allowed = await this.rateLimiter.tryConsume(
+        command.rateLimitKey,
+        command.rateLimitMax,
+      );
+      if (!allowed) throw new RateLimitExceededError();
     }
 
     const id = randomUUID();

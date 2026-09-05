@@ -25,6 +25,18 @@ resource "aws_cognito_user_pool" "users" {
       priority = 1
     }
   }
+
+  # Personaliza el asunto y el cuerpo del correo de verificación (envío del
+  # código al crear cuenta) y del correo de recuperación de contraseña.
+  # El placeholder {####} es reemplazado automáticamente por Cognito con el
+  # código de 6 dígitos.
+  verification_message_template {
+    default_email_option  = "CONFIRM_WITH_CODE"
+    email_subject         = "Tu código de verificación de CodeInsightAI"
+    email_message         = "¡Bienvenido a CodeInsightAI! Tu código de verificación es: {####}. Ingrésalo en la app para confirmar tu cuenta."
+    email_subject_by_link = "Confirma tu cuenta en CodeInsightAI"
+    email_message_by_link = "Haz clic en el siguiente enlace para confirmar tu cuenta en CodeInsightAI: {##Confirmar cuenta##}"
+  }
 }
 
 # App Client: representa la SPA de Angular. Sin secret (no aplica para
@@ -49,5 +61,15 @@ resource "aws_cognito_user_pool_client" "web" {
     access_token  = "minutes"
     id_token      = "minutes"
     refresh_token = "days"
+  }
+
+  # Al importar este recurso desde un cliente ya existente, el provider a
+  # veces no captura correctamente el atributo `generate_secret` (queda
+  # como null en el state), lo que dispararía un reemplazo destructivo
+  # innecesario (generate_secret es ForceNew). Lo ignoramos explícitamente
+  # para evitar recrear el client y así invalidar el Client ID en uso por
+  # el frontend ya desplegado.
+  lifecycle {
+    ignore_changes = [generate_secret]
   }
 }

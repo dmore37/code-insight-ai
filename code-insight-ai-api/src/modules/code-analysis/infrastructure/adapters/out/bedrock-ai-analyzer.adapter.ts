@@ -7,8 +7,8 @@ import {
 import {
   AiAnalyzerPort,
   AiAnalysisResult,
-} from '../../../domain/ports/out/ai-analyzer.port';
-import { StaticAnalysisResult } from '../../../domain/ports/out/static-analyzer.port';
+} from '../../../application/ports/out/ai-analyzer.port';
+import { StaticAnalysisResult } from '../../../application/ports/out/static-analyzer.port';
 import { ArchitecturePattern } from '../../../domain/entities/analysis-result.entity';
 import { DEFAULT_AWS_REGION } from '../../config/defaults';
 
@@ -85,12 +85,18 @@ export class BedrockAiAnalyzerAdapter implements AiAnalyzerPort {
 {
   "summary": "string: descripción funcional de la aplicación en 2-3 frases",
   "technologiesDetected": ["string"],
-  "architecturePattern": "uno de: Monolito | MVC | Clean Architecture | Hexagonal | Microservicios | N-Capas | Indeterminado",
+  "architecturePattern": "uno de: Monolito | MVC | Clean Architecture | Hexagonal | Microservicios | N-Capas | Infraestructura como Código (IaC) | Indeterminado",
   "architectureConfidence": number entre 0 y 1,
   "architectureEvidences": ["string"],
   "recommendations": ["string"],
   "risks": ["string"]
 }
+
+IMPORTANTE para clasificar "architecturePattern": la ESTRUCTURA DE CARPETAS tiene prioridad sobre el uso de decoradores como @Controller/@Injectable (estos aparecen tanto en MVC como en Hexagonal/Clean, así que NO son suficientes para inferir MVC). Reglas:
+- Si el repositorio es principalmente archivos ".tf" (Terraform) o similar (IaC), clasifica "architecturePattern" como "Infraestructura como Código (IaC)" con confianza alta, y usa "Terraform" (o la herramienta de IaC detectada) como "mainFramework"/tecnología, NO "Desconocido". Este NO es un patrón de arquitectura de aplicación (MVC/Hexagonal/etc.), es una convención propia de IaC.
+- Si ves evidencia de carpetas "domain/ports" (in/out) junto con "infrastructure/adapters" (in/out), o una separación clara "domain/" vs "infrastructure/" con puertos e implementaciones, clasifica como "Hexagonal" (o "Clean Architecture" si además hay capas de "application"/"use-cases"), NO como MVC.
+- Solo clasifica como "MVC" si ves la estructura clásica de carpetas "controllers/" + "models/" + "views/" sin separación domain/infrastructure.
+- Si no hay evidencia clara de ningún patrón, usa "Indeterminado" con confianza baja en vez de adivinar "MVC" por defecto.
 
 Información general:
 - Nombre del proyecto: ${staticResult.general.projectName}
@@ -147,6 +153,7 @@ ${staticResult.keyFileExcerpts.map((f) => `--- ${f.path} ---\n${f.content}`).joi
   }
 
   private fallback(staticResult: StaticAnalysisResult): AiAnalysisResult {
+    const isIac = staticResult.general.mainFramework === 'Terraform';
     return {
       functional: {
         summary: `Proyecto ${staticResult.general.projectName} desarrollado principalmente en ${staticResult.general.mainLanguage} usando ${staticResult.general.mainFramework}.`,
@@ -156,8 +163,8 @@ ${staticResult.keyFileExcerpts.map((f) => `--- ${f.path} ---\n${f.content}`).joi
         ],
       },
       architecture: {
-        pattern: ArchitecturePattern.Undetermined,
-        confidence: 0.3,
+        pattern: isIac ? ArchitecturePattern.InfrastructureAsCode : ArchitecturePattern.Undetermined,
+        confidence: isIac ? 0.7 : 0.3,
         evidences: staticResult.evidences.map((e) => e.description),
       },
       findings: {
