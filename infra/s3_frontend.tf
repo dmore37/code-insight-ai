@@ -77,7 +77,6 @@ resource "null_resource" "frontend_build_deploy" {
 export const environment = {
   production: true,
   apiBaseUrl: '${local.api_invoke_url}',
-  tokenEncryptionKey: '${var.frontend_token_encryption_key}',
   cognito: {
     region: '${var.aws_region}',
     userPoolId: '${aws_cognito_user_pool.users.id}',
