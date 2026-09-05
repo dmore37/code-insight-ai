@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, HostListener, inject } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { AuthPort } from './core/auth/domain/ports/auth.port';
 
@@ -16,5 +16,13 @@ export class AppComponent {
 
   logout(): void {
     this.auth.logout();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  handleBeforeUnload(event: BeforeUnloadEvent): void {
+    if (!this.auth.currentUser()) return;
+
+    event.preventDefault();
+    event.returnValue = '';
   }
 }

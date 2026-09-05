@@ -1,11 +1,18 @@
 import { ConfigService } from '@nestjs/config';
 
 const cloneMock = jest.fn();
-const extractAllToMock = jest.fn();
+const extractEntryToMock = jest.fn();
+const getEntriesMock = jest.fn(() => [
+  { entryName: 'src/index.ts' },
+  { entryName: 'node_modules/some-pkg/index.js' },
+]);
 
 jest.mock('simple-git', () => jest.fn(() => ({ clone: cloneMock })));
 jest.mock('adm-zip', () =>
-  jest.fn().mockImplementation(() => ({ extractAllTo: extractAllToMock })),
+  jest.fn().mockImplementation(() => ({
+    getEntries: getEntriesMock,
+    extractEntryTo: extractEntryToMock,
+  })),
 );
 jest.mock('node:fs/promises', () => {
   const actual = jest.requireActual('node:fs/promises');
@@ -59,7 +66,7 @@ describe('FilesystemRepoFetcherAdapter', () => {
       const source = await adapter.fetchFromZip('/tmp/uploaded.zip');
 
       // Then
-      expect(extractAllToMock).toHaveBeenCalled();
+      expect(extractEntryToMock).toHaveBeenCalled();
       expect(source.type).toBe(RepositorySourceType.Zip);
       expect(source.originalReference).toBe('/tmp/uploaded.zip');
     });
@@ -70,6 +77,7 @@ describe('FilesystemRepoFetcherAdapter', () => {
       // Given
       const s3Send = jest.fn().mockResolvedValue({
         Body: { transformToByteArray: async () => new Uint8Array([1, 2, 3]) },
+        ContentLength: 3,
       });
       (adapter as unknown as { s3Client: { send: jest.Mock } }).s3Client = { send: s3Send };
 
@@ -79,15 +87,27 @@ describe('FilesystemRepoFetcherAdapter', () => {
       );
 
       // Then
-      expect(s3Send).toHaveBeenCalledTimes(1);
+      expect(s3Send).toHaveBeenCalledTimes(2);
       expect(writeFile).toHaveBeenCalled();
-      expect(extractAllToMock).toHaveBeenCalled();
+      expect(extractEntryToMock).toHaveBeenCalled();
       expect(rm).toHaveBeenCalledWith(
         expect.stringContaining('code-insight-s3zip-src-'),
         { recursive: true, force: true },
       );
       expect(source.type).toBe(RepositorySourceType.Zip);
       expect(source.originalReference).toBe('my-project.zip');
+    });
+
+    it('should reject the ZIP when its size in S3 exceeds the configured limit', async () => {
+      // Given
+      const s3Send = jest.fn().mockResolvedValue({ ContentLength: 16 * 1024 * 1024 });
+      (adapter as unknown as { s3Client: { send: jest.Mock } }).s3Client = { send: s3Send };
+
+      // When / Then
+      await expect(
+        adapter.fetchFromS3Zip('uploads/owner-1/uuid__too-big.zip'),
+      ).rejects.toThrow(/supera el límite/);
+      expect(s3Send).toHaveBeenCalledTimes(1);
     });
   });
 
