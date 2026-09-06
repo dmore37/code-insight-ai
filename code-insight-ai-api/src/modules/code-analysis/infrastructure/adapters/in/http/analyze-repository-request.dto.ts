@@ -1,4 +1,14 @@
 import { ValidationAppError } from '../../../../../../shared/errors/app-error';
+import { AnalyzeRepositoryValidationMessage } from '../../../../domain/errors/analyze-repository-validation-message.enum';
+
+function assertOptionalString(
+  value: unknown,
+  message: AnalyzeRepositoryValidationMessage,
+): asserts value is string | undefined {
+  if (value !== undefined && typeof value !== 'string') {
+    throw new ValidationAppError(message);
+  }
+}
 
 export class AnalyzeRepositoryRequestDto {
   gitUrl?: string;
@@ -11,33 +21,24 @@ export class AnalyzeRepositoryRequestDto {
     const dto = new AnalyzeRepositoryRequestDto();
 
     if (typeof body !== 'object' || body === null) {
-      throw new ValidationAppError('El cuerpo de la solicitud debe ser un objeto JSON.');
+      throw new ValidationAppError(AnalyzeRepositoryValidationMessage.InvalidBody);
     }
 
     const { gitUrl, zipFilePath, zipS3Key, zipHash } = body as Record<string, unknown>;
 
-    if (gitUrl !== undefined && typeof gitUrl !== 'string') {
-      throw new ValidationAppError('"gitUrl" debe ser un texto.');
-    }
-    if (zipFilePath !== undefined && typeof zipFilePath !== 'string') {
-      throw new ValidationAppError('"zipFilePath" debe ser un texto.');
-    }
-    if (zipS3Key !== undefined && typeof zipS3Key !== 'string') {
-      throw new ValidationAppError('"zipS3Key" debe ser un texto.');
-    }
-    if (zipHash !== undefined && typeof zipHash !== 'string') {
-      throw new ValidationAppError('"zipHash" debe ser un texto.');
-    }
+    assertOptionalString(gitUrl, AnalyzeRepositoryValidationMessage.InvalidGitUrl);
+    assertOptionalString(zipFilePath, AnalyzeRepositoryValidationMessage.InvalidZipFilePath);
+    assertOptionalString(zipS3Key, AnalyzeRepositoryValidationMessage.InvalidZipS3Key);
+    assertOptionalString(zipHash, AnalyzeRepositoryValidationMessage.InvalidZipHash);
+
     if (!gitUrl && !zipFilePath && !zipS3Key) {
-      throw new ValidationAppError(
-        'Debe proporcionar "gitUrl", "zipFilePath" o "zipS3Key".',
-      );
+      throw new ValidationAppError(AnalyzeRepositoryValidationMessage.MissingSource);
     }
 
-    dto.gitUrl = gitUrl as string | undefined;
-    dto.zipFilePath = zipFilePath as string | undefined;
-    dto.zipS3Key = zipS3Key as string | undefined;
-    dto.zipHash = zipHash as string | undefined;
+    dto.gitUrl = gitUrl;
+    dto.zipFilePath = zipFilePath;
+    dto.zipS3Key = zipS3Key;
+    dto.zipHash = zipHash;
     return dto;
   }
 }
