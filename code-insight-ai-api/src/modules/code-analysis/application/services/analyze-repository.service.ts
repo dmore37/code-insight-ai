@@ -29,7 +29,7 @@ export class AnalyzeRepositoryService implements AnalyzeRepositoryUseCase {
     @Inject(STATIC_ANALYZER_PORT)
     private readonly staticAnalyzer: StaticAnalyzerPort,
     @Inject(AI_ANALYZER_PORT) private readonly aiAnalyzer: AiAnalyzerPort,
-  ) {}
+  ) { }
 
   async execute(command: AnalyzeRepositoryCommand): Promise<AnalysisResult> {
     if (!command.gitUrl && !command.zipFilePath && !command.zipS3Key) {

@@ -7,6 +7,7 @@ import { AnalysisStateService } from '../../core/code-analysis/application/servi
 import { AnalysisHistoryComponent } from '../analysis-history/analysis-history.component';
 import { AuthPort } from '../../core/auth/application/ports/auth.port';
 import { computeFileSha256 } from '../../core/code-analysis/domain/utils/file-hash.util';
+import { RepoUploadErrorMessage } from '../../core/code-analysis/domain/errors/repo-upload-error.enum';
 import {
   SUBMIT_POLL_INTERVAL_MS,
   SUBMIT_POLL_TIMEOUT_MS,
@@ -101,7 +102,7 @@ export class RepoUploadComponent {
 
   private async submitByUrl(): Promise<void> {
     if (!this.gitUrl.trim()) {
-      this.errorMessage.set('Debes ingresar una URL de repositorio git pública.');
+      this.errorMessage.set(RepoUploadErrorMessage.MissingGitUrl);
       return;
     }
 
@@ -116,7 +117,7 @@ export class RepoUploadComponent {
       await this.handleSubmitResponse(submitResponse);
     } catch (err) {
       this.errorMessage.set(
-        'No fue posible conectar con el servidor. Intenta nuevamente.',
+        RepoUploadErrorMessage.ConnectionFailed,
       );
       console.error(err);
     } finally {
@@ -127,14 +128,14 @@ export class RepoUploadComponent {
   private async submitByZip(): Promise<void> {
     if (!this.auth.currentUser()) {
       this.errorMessage.set(
-        'Analizar un archivo ZIP requiere iniciar sesión (protege tu código de subidas anónimas).',
+        RepoUploadErrorMessage.RequiresLogin,
       );
       this.router.navigateByUrl('/login');
       return;
     }
 
     if (!this.zipFile) {
-      this.errorMessage.set('Debes seleccionar un archivo ZIP.');
+      this.errorMessage.set(RepoUploadErrorMessage.MissingZipFile);
       return;
     }
 
@@ -163,7 +164,7 @@ export class RepoUploadComponent {
         body: this.zipFile,
       });
       if (!uploadResult.ok) {
-        this.errorMessage.set('No fue posible subir el archivo ZIP a S3.');
+        this.errorMessage.set(RepoUploadErrorMessage.ZipUploadFailed);
         return;
       }
 
@@ -175,7 +176,7 @@ export class RepoUploadComponent {
       await this.handleSubmitResponse(submitResponse);
     } catch (err) {
       this.errorMessage.set(
-        'No fue posible conectar con el servidor. Intenta nuevamente.',
+        RepoUploadErrorMessage.ConnectionFailed,
       );
       console.error(err);
     } finally {
@@ -206,11 +207,11 @@ export class RepoUploadComponent {
       this.router.navigateByUrl('/resultado');
     } else if (record.status === AnalysisStatus.Failed) {
       this.errorMessage.set(
-        record.errorMessage ?? 'El análisis falló sin detalle adicional.',
+        record.errorMessage ?? RepoUploadErrorMessage.AnalysisFailedUnknown,
       );
     } else {
       this.errorMessage.set(
-        'El análisis sigue procesándose; revisa el historial más abajo.',
+        RepoUploadErrorMessage.AnalysisStillProcessing,
       );
     }
   }

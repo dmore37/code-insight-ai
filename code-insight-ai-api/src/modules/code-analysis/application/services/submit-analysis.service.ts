@@ -24,7 +24,7 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
     private readonly analysisQueue: AnalysisQueuePort,
     @Inject(RATE_LIMITER_PORT)
     private readonly rateLimiter: RateLimiterPort,
-  ) {}
+  ) { }
 
   async execute(command: AnalyzeRepositoryCommand): Promise<AnalysisRecord> {
     if (!command.gitUrl && !command.zipFilePath && !command.zipS3Key) {
@@ -45,7 +45,7 @@ export class SubmitAnalysisService implements SubmitAnalysisUseCase {
       if (cached) return cached;
     }
 
-                    if (command.rateLimitKey && command.rateLimitMax) {
+    if (command.rateLimitKey && command.rateLimitMax) {
       const allowed = await this.rateLimiter.tryConsume(
         command.rateLimitKey,
         command.rateLimitMax,
