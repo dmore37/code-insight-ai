@@ -125,7 +125,5 @@ Al finalizar, Terraform muestra las URLs y recursos creados (`api_url`, `web_clo
 
 ## Documentación adicional
 
-- [`docs/sustentacion.md`](docs/sustentacion.md) — documento técnico de sustentación del proyecto
-- [`docs/architecture-diagram.drawio.xml`](docs/architecture-diagram.drawio.xml) — diagrama de arquitectura completo
 - [`code-insight-ai-api/README.md`](code-insight-ai-api/README.md) — README específico del backend
 - [`code-insight-ai-web/README.md`](code-insight-ai-web/README.md) — README específico del frontend
