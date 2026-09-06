@@ -8,6 +8,7 @@ import { AnalysisHistoryComponent } from '../analysis-history/analysis-history.c
 import { AuthPort } from '../../core/auth/application/ports/auth.port';
 import { computeFileSha256 } from '../../core/code-analysis/domain/utils/file-hash.util';
 import { RepoUploadErrorMessage } from '../../core/code-analysis/domain/errors/repo-upload-error.enum';
+import { AnalysisStepLabel } from '../../core/code-analysis/domain/models/analysis-step-label.enum';
 import {
   SUBMIT_POLL_INTERVAL_MS,
   SUBMIT_POLL_TIMEOUT_MS,
@@ -63,13 +64,13 @@ export class RepoUploadComponent {
   stepLabel(step: AnalysisStep): string {
     switch (step) {
       case AnalysisStep.Uploading:
-        return 'Subiendo ZIP';
+        return AnalysisStepLabel.Uploading;
       case AnalysisStep.Queued:
-        return 'Encolando análisis';
+        return AnalysisStepLabel.Queued;
       case AnalysisStep.Processing:
-        return 'Analizando (estático + IA)';
+        return AnalysisStepLabel.Processing;
       case AnalysisStep.Finishing:
-        return 'Finalizando';
+        return AnalysisStepLabel.Finishing;
     }
   }
 
