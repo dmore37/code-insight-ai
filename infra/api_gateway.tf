@@ -1,6 +1,13 @@
 # ============================================================
 # API Gateway: HTTP API con integración proxy hacia la Lambda
 # ============================================================
+locals {
+  # Origen real del frontend, para restringir CORS en vez de usar "*":
+  # si CloudFront está habilitado, es su dominio HTTPS; si no, es el
+  # website endpoint HTTP directo de S3 (fallback sin CDN).
+  frontend_origin = var.enable_cloudfront ? "https://${aws_cloudfront_distribution.web[0].domain_name}" : "http://${aws_s3_bucket_website_configuration.web.website_endpoint}"
+}
+
 resource "aws_apigatewayv2_api" "api" {
   name          = "${var.project_name}-api-gateway"
   protocol_type = "HTTP"
@@ -12,8 +19,15 @@ resource "aws_apigatewayv2_api" "api" {
   # debe exigir el token (los navegadores nunca lo envían en el
   # preflight), por eso la autenticación de ZIP se valida dentro del
   # propio backend (ver `getOwnerId`) y no a nivel de ruta de API Gateway.
+  #
+  # allow_origins restringido al dominio real del frontend (CloudFront o
+  # S3 website), en vez de "*": evita que scripts de otros sitios web
+  # puedan invocar esta API usando la sesión del navegador de un usuario.
+  # Nota: esto NO protege contra clientes que no son navegadores (curl,
+  # Postman, scripts server-side), CORS es una política exclusiva del
+  # navegador.
   cors_configuration {
-    allow_origins = ["*"]
+    allow_origins = [local.frontend_origin]
     allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     allow_headers = ["Content-Type", "Authorization", "x-user-id"]
     max_age       = 300

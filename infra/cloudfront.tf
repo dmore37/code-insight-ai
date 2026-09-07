@@ -1,9 +1,19 @@
 # ============================================================
 # CloudFront: CDN con HTTPS delante del bucket S3 (opcional).
-# Usa el endpoint de "S3 website" como origen personalizado (Custom Origin),
-# no como origen S3 nativo, para mantener el enfoque simple de bucket
-# público que ya usamos en el despliegue manual.
+# Usa Origin Access Control (OAC) hacia el bucket S3 privado (NO el
+# website endpoint público): el bucket queda completamente bloqueado a
+# acceso directo, y solo esta distribución de CloudFront puede leerlo
+# (ver bucket policy en s3_frontend.tf, aws_s3_bucket_policy.web_cloudfront_oac).
 # ============================================================
+resource "aws_cloudfront_origin_access_control" "web" {
+  count = var.enable_cloudfront ? 1 : 0
+
+  name                              = "${var.project_name}-web-oac"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
 resource "aws_cloudfront_distribution" "web" {
   count = var.enable_cloudfront ? 1 : 0
 
@@ -13,19 +23,13 @@ resource "aws_cloudfront_distribution" "web" {
   comment             = "CDN para frontend Angular - ${var.project_name}"
 
   origin {
-    origin_id   = "s3-website-origin"
-    domain_name = aws_s3_bucket_website_configuration.web.website_endpoint
-
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
+    origin_id                = "s3-oac-origin"
+    domain_name               = aws_s3_bucket.web.bucket_regional_domain_name
+    origin_access_control_id = aws_cloudfront_origin_access_control.web[0].id
   }
 
   default_cache_behavior {
-    target_origin_id       = "s3-website-origin"
+    target_origin_id       = "s3-oac-origin"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
@@ -33,6 +37,23 @@ resource "aws_cloudfront_distribution" "web" {
 
     # Cache policy administrada por AWS: "CachingOptimized"
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+  }
+
+  # Angular usa routing del lado del cliente (client-side routing): rutas
+  # como "/resultado" no existen como objeto real en S3. Un bucket privado
+  # vía OAC responde 403 (no 404) a esas rutas, así que ambos códigos se
+  # mapean a index.html con 200, dejando que Angular Router resuelva la
+  # ruta en el navegador.
+  custom_error_response {
+    error_code         = 403
+    response_code      = 200
+    response_page_path = "/index.html"
+  }
+
+  custom_error_response {
+    error_code         = 404
+    response_code      = 200
+    response_page_path = "/index.html"
   }
 
   restrictions {

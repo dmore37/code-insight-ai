@@ -12,10 +12,15 @@ resource "aws_s3_bucket" "web" {
 resource "aws_s3_bucket_public_access_block" "web" {
   bucket = aws_s3_bucket.web.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  # Cuando CloudFront está activo, el bucket queda 100% privado: el único
+  # acceso permitido es el de la propia distribución de CloudFront, vía
+  # Origin Access Control (OAC) + bucket policy (ver más abajo). Si
+  # CloudFront está deshabilitado, se mantiene el acceso público directo
+  # (fallback histórico, para poder probar sin CDN).
+  block_public_acls       = var.enable_cloudfront
+  block_public_policy     = var.enable_cloudfront
+  ignore_public_acls      = var.enable_cloudfront
+  restrict_public_buckets = var.enable_cloudfront
 }
 
 resource "aws_s3_bucket_website_configuration" "web" {
@@ -30,7 +35,11 @@ resource "aws_s3_bucket_website_configuration" "web" {
   }
 }
 
+# Política pública de solo lectura: SOLO se crea si CloudFront está
+# deshabilitado (fallback de acceso directo a S3 sin CDN).
 data "aws_iam_policy_document" "web_public_read" {
+  count = var.enable_cloudfront ? 0 : 1
+
   statement {
     sid       = "PublicReadGetObject"
     effect    = "Allow"
@@ -45,8 +54,44 @@ data "aws_iam_policy_document" "web_public_read" {
 }
 
 resource "aws_s3_bucket_policy" "web_public_read" {
+  count  = var.enable_cloudfront ? 0 : 1
   bucket = aws_s3_bucket.web.id
-  policy = data.aws_iam_policy_document.web_public_read.json
+  policy = data.aws_iam_policy_document.web_public_read[0].json
+
+  depends_on = [aws_s3_bucket_public_access_block.web]
+}
+
+# Política privada: SOLO CloudFront (vía Origin Access Control) puede leer
+# objetos del bucket. Cualquier acceso directo a S3 (website endpoint o
+# API de S3) queda bloqueado por el public_access_block de arriba; esta
+# policy además restringe a nivel de IAM que únicamente la distribución
+# de CloudFront específica (por ARN) pueda hacer GetObject.
+data "aws_iam_policy_document" "web_cloudfront_oac" {
+  count = var.enable_cloudfront ? 1 : 0
+
+  statement {
+    sid       = "AllowCloudFrontServicePrincipalReadOnly"
+    effect    = "Allow"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.web.arn}/*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [aws_cloudfront_distribution.web[0].arn]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "web_cloudfront_oac" {
+  count  = var.enable_cloudfront ? 1 : 0
+  bucket = aws_s3_bucket.web.id
+  policy = data.aws_iam_policy_document.web_cloudfront_oac[0].json
 
   depends_on = [aws_s3_bucket_public_access_block.web]
 }
@@ -91,6 +136,7 @@ EOF
 
   depends_on = [
     aws_s3_bucket_policy.web_public_read,
+    aws_s3_bucket_policy.web_cloudfront_oac,
     aws_s3_bucket_website_configuration.web,
     aws_apigatewayv2_stage.default,
     aws_cognito_user_pool.users,
